@@ -1,8 +1,6 @@
-import 'dart:io' as io;
-
 import 'package:appwrite/appwrite.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:appwrite/models.dart' hide Row;
+import 'package:appwrite/models.dart' as models;
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:go_router/go_router.dart';
@@ -19,11 +17,11 @@ class LensScreen extends StatefulWidget {
 
 class _LensScreenState extends State<LensScreen> {
   final AppwriteService _appwriteService = AppwriteService();
-  final List<Document> _items = [];
+  final List<models.Row> _items = [];
   bool _isLoading = false;
   String? _error;
   bool _hasMore = true;
-  String? _lastDocumentId;
+  String? _lastRowId;
 
   final _scrollController = ScrollController();
   final ImagePicker _picker = ImagePicker();
@@ -56,13 +54,13 @@ class _LensScreenState extends State<LensScreen> {
     });
 
     try {
-      final response = await _appwriteService.getImages(cursor: _lastDocumentId);
+      final response = await _appwriteService.getImages(cursor: _lastRowId);
 
-      if (response.documents.isNotEmpty) {
+      if (response.rows.isNotEmpty) {
         setState(() {
-          _items.addAll(response.documents);
-          _lastDocumentId = response.documents.last.$id;
-          if (response.documents.length < 10) {
+          _items.addAll(response.rows);
+          _lastRowId = response.rows.last.$id;
+          if (response.rows.length < 10) {
             _hasMore = false;
           }
         });
@@ -85,7 +83,7 @@ class _LensScreenState extends State<LensScreen> {
   Future<void> _refreshData() async {
     setState(() {
       _items.clear();
-      _lastDocumentId = null;
+      _lastRowId = null;
       _hasMore = true;
     });
     await _fetchData();
@@ -97,12 +95,15 @@ class _LensScreenState extends State<LensScreen> {
       return;
     }
 
+    final bytes = await image.readAsBytes();
+    final filename = image.name;
+
     setState(() {
       _isLoading = true;
     });
 
     try {
-      await _appwriteService.uploadImage(image: io.File(image.path));
+      await _appwriteService.uploadImage(bytes: bytes, filename: filename);
 
       // Refresh data after upload
       await _refreshData();
@@ -152,13 +153,13 @@ class _LensScreenState extends State<LensScreen> {
           SliverToBoxAdapter(
             child: GestureDetector(
               onTap: _uploadImage,
-              child: Card(
-                margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: const Card(
+                margin: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: EdgeInsets.all(16.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
+                    children: [
                       Icon(Icons.camera_alt_outlined),
                       SizedBox(width: 8),
                       Text('Camera'),
