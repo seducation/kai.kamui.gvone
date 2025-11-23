@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/appwrite_service.dart';
+import 'package:provider/provider.dart';
 
 // The main dialog widget that contains the form.
 class CreateRowDialog extends StatefulWidget {
@@ -9,8 +11,67 @@ class CreateRowDialog extends StatefulWidget {
 }
 
 class _CreateRowDialogState extends State<CreateRowDialog> {
-  // State for the "Create more" toggle switch.
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _bioController = TextEditingController();
+  final _profileImageController = TextEditingController();
+  final _bannerImageController = TextEditingController();
+  String _selectedType = "Code";
+
   bool _createMore = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _bioController.dispose();
+    _profileImageController.dispose();
+    _bannerImageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _createProfile() async {
+    if (_formKey.currentState!.validate()) {
+      try {
+        final appwriteService =
+            Provider.of<AppwriteService>(context, listen: false);
+        final user = await appwriteService.getUser();
+
+        await appwriteService.createProfile(
+          ownerId: user.$id,
+          name: _nameController.text,
+          type: _selectedType,
+          bio: _bioController.text,
+          profileImageUrl: _profileImageController.text,
+          bannerImageUrl: _bannerImageController.text,
+        );
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Profile Created!")),
+        );
+
+        if (!_createMore) {
+          Navigator.of(context).pop();
+        } else {
+          // Clear the form for the next entry
+          _formKey.currentState!.reset();
+          _nameController.clear();
+          _bioController.clear();
+          _profileImageController.clear();
+          _bannerImageController.clear();
+          setState(() {
+            _selectedType = "Code";
+          });
+        }
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to create profile: $e')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,195 +85,147 @@ class _CreateRowDialogState extends State<CreateRowDialog> {
         width: 500, // Max width for tablet/desktop
         constraints:
             BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // --- Header Section ---
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "Create account",
-                    style: theme.textTheme.titleLarge,
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.of(context).pop(),
-                    color: theme.iconTheme.color,
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-
-            // --- Scrollable Form Content ---
-            Flexible(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    // Input fields using the custom widget
-                    CustomNullTextField(
-                      label: "user id",
-                      hintText: "Enter string",
-                      maxLength: 256,
-                      minLines: 3,
-                      icon: Icons.title,
-                    ),
-                    SizedBox(height: 24),
-
-                    DropdownWidget(
-                      label: "type",
-                      items: ["channel", "group", "community"],
-                      icon: Icons.category,
-                    ),
-                    SizedBox(height: 24),
-
-                    CustomNullTextField(
-                      label: "bio",
-                      hintText: "Enter text",
-                      isSingleLine: false,
-                      minLines: 3,
-                      icon: Icons.person,
-                    ),
-                    SizedBox(height: 24),
-
-                    CustomNullTextField(
-                      label: "profile image",
-                      hintText: "Enter image URL",
-                      isSingleLine: true,
-                      icon: Icons.image,
-                    ),
-                    SizedBox(height: 24),
-
-                    CustomNullTextField(
-                      label: "banner image",
-                      hintText: "Enter image URL",
-                      isSingleLine: true,
-                      icon: Icons.image,
-                    ),
-                    SizedBox(height: 24),
-
-                    // Row ID Dropdown
-                    DropdownWidget(
-                      label: "Category",
-                      items: ["profile", "channel", "group", "hashtags"],
-                      icon: Icons.edit,
-                    ),
-                    SizedBox(height: 24),
-
-                    // Permission Text
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // --- Header Section ---
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
                     Text(
-                      "Make sure this channel follows community guidelines.",
-                      style: TextStyle(fontSize: 13, height: 1.4),
+                      "Create Profile",
+                      style: theme.textTheme.titleLarge,
                     ),
-                    SizedBox(height: 16),
-
-                    // Info Box
-                    InfoBox(),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(context).pop(),
+                      color: theme.iconTheme.color,
+                    ),
                   ],
                 ),
               ),
-            ),
+              const Divider(height: 1),
 
-            const Divider(height: 1),
-
-            // --- Footer Section (Toggle and Buttons) ---
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  // Create More Switch
-                  Row(
+              // --- Scrollable Form Content ---
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Switch(
-                        value: _createMore,
-                        activeThumbColor: theme.colorScheme.primary,
-                        inactiveThumbColor: theme.disabledColor,
-                        inactiveTrackColor: theme.disabledColor.withAlpha(100),
-                        onChanged: (val) => setState(() => _createMore = val),
+                      CustomNullTextField(
+                        controller: _nameController,
+                        label: "Name",
+                        hintText: "Enter string",
+                        maxLength: 256,
+                        minLines: 3,
+                        icon: Icons.title,
                       ),
-                      const SizedBox(width: 8),
-                      const Text("Create more", style: TextStyle(fontSize: 13)),
+                      const SizedBox(height: 24),
+                      DropdownWidget(
+                        label: "Type",
+                        items: const ["Code", "Poll", "Link"],
+                        selectedItem: _selectedType,
+                        onChanged: (newValue) {
+                          setState(() {
+                            _selectedType = newValue!;
+                          });
+                        },
+                        icon: Icons.category,
+                      ),
+                      const SizedBox(height: 24),
+                      CustomNullTextField(
+                        controller: _bioController,
+                        label: "Bio",
+                        hintText: "Enter text",
+                        isSingleLine: false,
+                        minLines: 3,
+                        icon: Icons.person,
+                      ),
+                      const SizedBox(height: 24),
+                      CustomNullTextField(
+                        controller: _profileImageController,
+                        label: "Profile Image",
+                        hintText: "Enter image URL",
+                        isSingleLine: true,
+                        icon: Icons.image,
+                      ),
+                      const SizedBox(height: 24),
+                      CustomNullTextField(
+                        controller: _bannerImageController,
+                        label: "Banner Image",
+                        hintText: "Enter image URL",
+                        isSingleLine: true,
+                        icon: Icons.image,
+                      ),
                     ],
                   ),
-                  const Spacer(),
-
-                  // Cancel Button
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: TextButton.styleFrom(
-                      foregroundColor: theme.textTheme.bodyMedium?.color,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 16),
-                    ),
-                    child: const Text("Cancel"),
-                  ),
-                  const SizedBox(width: 12),
-
-                  // Create Button
-                  ElevatedButton(
-                    onPressed: () {
-                      // In a real app, this would submit the form data
-                      Navigator.of(context).pop();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Row Created!")),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.colorScheme.primary,
-                      foregroundColor: theme.colorScheme.onPrimary,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 16),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6)),
-                    ),
-                    child: const Text("Create",
-                        style: TextStyle(fontWeight: FontWeight.w600)),
-                  ),
-                ],
+                ),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
-// --- Auxiliary Widgets for Clarity ---
+              const Divider(height: 1),
 
-class InfoBox extends StatelessWidget {
-  const InfoBox({super.key});
+              // --- Footer Section (Toggle and Buttons) ---
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    // Create More Switch
+                    Row(
+                      children: [
+                        Switch(
+                          value: _createMore,
+                          activeThumbColor: theme.colorScheme.primary,
+                          inactiveThumbColor: theme.disabledColor,
+                          inactiveTrackColor:
+                              theme.disabledColor.withAlpha(100),
+                          onChanged: (val) => setState(() => _createMore = val),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text("Create more",
+                            style: TextStyle(fontSize: 13)),
+                      ],
+                    ),
+                    const Spacer(),
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.secondary.withAlpha(25),
-        border: Border.all(color: theme.colorScheme.secondary.withAlpha(50)),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.info_outline,
-              color: theme.colorScheme.secondary, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              "If you want to assign row permissions, navigate to Table settings and enable row security. Otherwise, only table permissions will be used.",
-              style: theme.textTheme.bodyMedium,
-            ),
+                    // Cancel Button
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: TextButton.styleFrom(
+                        foregroundColor: theme.textTheme.bodyMedium?.color,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 16),
+                      ),
+                      child: const Text("Cancel"),
+                    ),
+                    const SizedBox(width: 12),
+
+                    // Create Button
+                    ElevatedButton(
+                      onPressed: _createProfile,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: theme.colorScheme.primary,
+                        foregroundColor: theme.colorScheme.onPrimary,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 16),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(6)),
+                      ),
+                      child: const Text("Create",
+                          style: TextStyle(fontWeight: FontWeight.w600)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -226,6 +239,7 @@ class CustomNullTextField extends StatefulWidget {
   final int minLines;
   final bool isSingleLine;
   final IconData icon;
+  final TextEditingController controller;
 
   const CustomNullTextField({
     super.key,
@@ -235,6 +249,7 @@ class CustomNullTextField extends StatefulWidget {
     this.minLines = 1,
     this.isSingleLine = false,
     required this.icon,
+    required this.controller,
   });
 
   @override
@@ -243,19 +258,6 @@ class CustomNullTextField extends StatefulWidget {
 
 class _CustomNullTextFieldState extends State<CustomNullTextField> {
   bool isNull = false;
-  late TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -290,7 +292,7 @@ class _CustomNullTextFieldState extends State<CustomNullTextField> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               TextFormField(
-                controller: _controller,
+                controller: widget.controller,
                 enabled: !isNull, // Disable input if NULL is checked
                 maxLines: widget.isSingleLine ? 1 : widget.minLines,
                 maxLength: widget.maxLength,
@@ -307,6 +309,12 @@ class _CustomNullTextFieldState extends State<CustomNullTextField> {
                   contentPadding: const EdgeInsets.all(12),
                   counterText: "", // Hide default counter provided by maxLength
                 ),
+                validator: (value) {
+                  if (!isNull && (value == null || value.isEmpty)) {
+                    return 'Please enter a value';
+                  }
+                  return null;
+                },
               ),
 
               // Footer inside the input box (Counter + Null Checkbox)
@@ -317,7 +325,7 @@ class _CustomNullTextFieldState extends State<CustomNullTextField> {
                     // Custom Counter
                     if (widget.maxLength != null)
                       ValueListenableBuilder(
-                        valueListenable: _controller,
+                        valueListenable: widget.controller,
                         builder: (context, TextEditingValue value, _) {
                           return Text(
                             "${value.text.length}/${widget.maxLength}",
@@ -331,7 +339,7 @@ class _CustomNullTextFieldState extends State<CustomNullTextField> {
                       onTap: () {
                         setState(() {
                           isNull = !isNull;
-                          if (isNull) _controller.clear();
+                          if (isNull) widget.controller.clear();
                         });
                       },
                       child: Row(
@@ -342,10 +350,11 @@ class _CustomNullTextFieldState extends State<CustomNullTextField> {
                             onChanged: (val) {
                               setState(() {
                                 isNull = val ?? false;
-                                if (isNull) _controller.clear();
+                                if (isNull) widget.controller.clear();
                               });
                             },
-                            side: BorderSide(color: theme.dividerColor, width: 1),
+                            side: BorderSide(
+                                color: theme.dividerColor, width: 1),
                             activeColor: theme.primaryColor,
                             checkColor: theme.colorScheme.onPrimary,
                             materialTapTargetSize:
@@ -371,30 +380,21 @@ class _CustomNullTextFieldState extends State<CustomNullTextField> {
   }
 }
 
-class DropdownWidget extends StatefulWidget {
+class DropdownWidget extends StatelessWidget {
   final String label;
   final List<String> items;
+  final String selectedItem;
+  final ValueChanged<String?> onChanged;
   final IconData icon;
 
   const DropdownWidget({
     super.key,
     required this.label,
     required this.items,
+    required this.selectedItem,
+    required this.onChanged,
     required this.icon,
   });
-
-  @override
-  DropdownWidgetState createState() => DropdownWidgetState();
-}
-
-class DropdownWidgetState extends State<DropdownWidget> {
-  String? _selectedValue;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedValue = widget.items.first;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -404,11 +404,11 @@ class DropdownWidgetState extends State<DropdownWidget> {
       children: [
         Row(
           children: [
-            Icon(widget.icon, size: 14, color: theme.iconTheme.color),
+            Icon(icon, size: 14, color: theme.iconTheme.color),
             const SizedBox(width: 6),
             RichText(
               text: TextSpan(
-                text: widget.label,
+                text: label,
                 style: theme.textTheme.bodyLarge
                     ?.copyWith(fontWeight: FontWeight.bold),
                 children: [
@@ -430,20 +430,16 @@ class DropdownWidgetState extends State<DropdownWidget> {
             border: Border.all(color: theme.dividerColor),
           ),
           child: DropdownButton<String>(
-            value: _selectedValue,
+            value: selectedItem,
             isExpanded: true,
             underline: Container(),
-            items: widget.items.map<DropdownMenuItem<String>>((String value) {
+            items: items.map<DropdownMenuItem<String>>((String value) {
               return DropdownMenuItem<String>(
                 value: value,
                 child: Text(value),
               );
             }).toList(),
-            onChanged: (String? newValue) {
-              setState(() {
-                _selectedValue = newValue;
-              });
-            },
+            onChanged: onChanged,
           ),
         ),
       ],

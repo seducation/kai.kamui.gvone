@@ -1,5 +1,3 @@
-
-import 'dart:io' as io;
 import 'dart:ui';
 
 import 'package:appwrite/appwrite.dart';
@@ -86,9 +84,13 @@ class _AddPostScreenState extends State<AddPostScreen> {
       // 1. Upload files
       List<String> uploadedFileIds = [];
       for (final file in _selectedFiles) {
-        final uploadedFile = await _appwriteService.uploadFile(
-            file: io.File(file.path!));
-        uploadedFileIds.add(uploadedFile.$id);
+        if (file.bytes != null) {
+            final uploadedFile = await _appwriteService.uploadFile(
+                bytes: file.bytes!,
+                filename: file.name,
+            );
+            uploadedFileIds.add(uploadedFile.$id);
+        }
       }
 
       final postData = {
@@ -132,6 +134,7 @@ class _AddPostScreenState extends State<AddPostScreen> {
         allowMultiple: true,
         type: FileType.custom,
         allowedExtensions: ['jpg', 'pdf', 'doc', 'png'], // Example extensions
+        withData: true, // This is crucial for web and cross-platform uploads
       );
 
       if (result != null) {
@@ -462,7 +465,7 @@ class FileListItem extends StatelessWidget {
             ),
           ),
           Text(
-            '(${((file.size) / 1024).toStringAsFixed(1)} KB)',
+            '(${((file.bytes?.lengthInBytes ?? 0) / 1024).toStringAsFixed(1)} KB)',
             style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
           ),
           const SizedBox(width: 10),

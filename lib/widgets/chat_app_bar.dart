@@ -1,6 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:my_app/profile_page_screen.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 
 class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -28,15 +28,9 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       title: InkWell(
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ChannelProfilePage(
-                name: title,
-                imageUrl: urlImage,
-              ),
-            ),
-          );
+          final name = Uri.encodeComponent(title);
+          final imageUrl = Uri.encodeComponent(urlImage);
+          context.go('/profile_page?name=$name&imageUrl=$imageUrl');
         },
         child: Row(
           children: [

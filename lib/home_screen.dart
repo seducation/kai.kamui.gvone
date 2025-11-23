@@ -214,9 +214,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ],
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(kToolbarHeight),
-              child: SizedBox(
-                height: kToolbarHeight,
-                child: tabBarWidget,
+              child: ClipRect(
+                child: SizedBox(
+                  height: kToolbarHeight,
+                  child: tabBarWidget,
+                ),
               ),
             ),
           );
@@ -236,7 +238,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   onAddTab: _onAddTab,
                 );
               } else if (name == 'chats') {
-                return ChatsScreen();
+                return const ChatsScreen();
               } else if (name == 'shorts') {
                 return const HMVShortsTabscreen();
               } else if (name == 'feature') {

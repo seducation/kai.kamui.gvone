@@ -22,6 +22,7 @@ class _ChatsScreenState extends State<ChatsScreen> {
     super.initState();
     _chatItems = [
       ChatModel(
+        userId: "691948bf001eb3eccd78",
         name: "User 1",
         message: "Hello there!",
         time: "12:30 PM",
@@ -31,6 +32,7 @@ class _ChatsScreenState extends State<ChatsScreen> {
         hasStory: true,
       ),
       ChatModel(
+        userId: "691948bf001eb3eccd79",
         name: "User 2",
         message: "How are you?",
         time: "12:35 PM",
@@ -38,6 +40,7 @@ class _ChatsScreenState extends State<ChatsScreen> {
         hasStory: true,
       ),
       ChatModel(
+        userId: "691948bf001eb3eccd80",
         name: "User 3",
         message: "See you soon.",
         time: "12:40 PM",

@@ -1,4 +1,5 @@
 class ChatModel {
+  final String userId;
   final String name;
   String message;
   String time;
@@ -8,6 +9,7 @@ class ChatModel {
   bool hasStory;
 
   ChatModel({
+    required this.userId,
     required this.name,
     required this.message,
     required this.time,

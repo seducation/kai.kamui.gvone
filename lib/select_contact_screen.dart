@@ -9,6 +9,7 @@ class SelectContactScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final List<ChatModel> contacts = [
       ChatModel(
         userId: "691948bf001eb3eccd78",
@@ -51,15 +52,15 @@ class SelectContactScreen extends StatelessWidget {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Select contact"),
+            const Text("Select contact"),
             Text(
               "256 contacts",
               style: TextStyle(
                 fontSize: 13,
-                color: Colors.white70,
+                color: theme.appBarTheme.titleTextStyle?.color?.withAlpha(179),
                 fontWeight: FontWeight.normal,
               ),
             ),
@@ -90,21 +91,44 @@ class SelectContactScreen extends StatelessWidget {
             trailingIcon: Icons.qr_code,
           ),
           const ActionItem(
-            icon: Icons.groups,
-            label: "New community",
+            icon: Icons.search,
+            label: "Find",
           ),
-          const ActionItem(
+          ActionItem(
             icon: Icons.smart_toy_outlined,
             label: "Chat with AIs",
+            onTap: () {
+              final aiChat = ChatModel(
+                userId: "kai_ai_user",
+                name: "KAI",
+                message: "How can I help you?",
+                time: "",
+                imgPath: "",
+              );
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ChatMessagingScreen(
+                    chat: aiChat,
+                    onMessageSent: (newMessage) {
+                      final newChat = aiChat;
+                      newChat.message = newMessage;
+                      newChat.time = "Now"; // Or format current time
+                      onNewChat(newChat); // Call the callback from ChatsScreen
+                    },
+                  ),
+                ),
+              );
+            },
           ),
 
           // Section Header
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Text(
               "Contacts on WhatsApp",
               style: TextStyle(
-                color: Colors.grey,
+                color: Colors.grey[700],
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
               ),
@@ -142,34 +166,34 @@ class ActionItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final IconData? trailingIcon;
+  final VoidCallback? onTap;
 
   const ActionItem({
     super.key,
     required this.icon,
     required this.label,
     this.trailingIcon,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return ListTile(
+      onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       leading: CircleAvatar(
         radius: 22,
-        backgroundColor: const Color(0xFF00A884), // WhatsApp Green
+        backgroundColor: theme.colorScheme.primary,
         child: Icon(
           icon,
-          color: const Color(0xFF111B21), // Dark icon color
+          color: theme.colorScheme.onPrimary,
           size: 24,
         ),
       ),
       title: Text(
         label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-        ),
+        style: theme.textTheme.titleMedium,
       ),
       trailing: trailingIcon != null
           ? Icon(trailingIcon, color: Colors.grey)
@@ -187,19 +211,20 @@ class ContactItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return ListTile(
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       leading: CircleAvatar(
         radius: 22,
-        backgroundColor: Colors.grey[800],
+        backgroundColor: Colors.grey[300],
         backgroundImage:
             contact.imgPath.isNotEmpty ? AssetImage(contact.imgPath) : null,
         child: contact.imgPath.isEmpty
             ? Text(
                 contact.name.isNotEmpty ? contact.name[0] : "",
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: Colors.grey[800],
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
                 ),
@@ -210,11 +235,7 @@ class ContactItem extends StatelessWidget {
         children: [
           Text(
             contact.name,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 17,
-              fontWeight: FontWeight.w500,
-            ),
+            style: theme.textTheme.titleMedium,
           ),
         ],
       ),
@@ -222,10 +243,7 @@ class ContactItem extends StatelessWidget {
         padding: const EdgeInsets.only(top: 2.0),
         child: Text(
           contact.message,
-          style: const TextStyle(
-            color: Colors.grey,
-            fontSize: 14,
-          ),
+          style: theme.textTheme.bodySmall,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),

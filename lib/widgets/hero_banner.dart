@@ -37,7 +37,7 @@ class _HeroBannerState extends State<HeroBanner> {
             child: SmoothPageIndicator(
               controller: _controller,
               count: widget.items.length,
-              effect: WormEffect(
+              effect: const WormEffect(
                 dotHeight: 8,
                 dotWidth: 8,
                 activeDotColor: Colors.white,
@@ -96,14 +96,14 @@ class _HeroBannerItem extends StatelessWidget {
         // Gradient Overlay (bottom fade)
         Positioned.fill(
           child: Container(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
                   Colors.transparent,
-                  const Color.fromRGBO(0, 0, 0, 0.6),
-                  const Color.fromRGBO(0, 0, 0, 0.8),
+                  Color.fromRGBO(0, 0, 0, 0.6),
+                  Color.fromRGBO(0, 0, 0, 0.8),
                 ],
               ),
             ),

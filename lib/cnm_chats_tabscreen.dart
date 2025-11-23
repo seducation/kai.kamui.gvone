@@ -1,6 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:my_app/chat_messaging_screen.dart';
+import 'package:go_router/go_router.dart';
 import 'package:my_app/model/chat_model.dart';
 import 'package:my_app/one_time_message_screen.dart';
 import 'package:shimmer/shimmer.dart';
@@ -44,7 +44,9 @@ class CNMChatsTabscreen extends StatelessWidget {
                       final chat = chatItems[index];
                       return ChatListItem(
                           chat: chat,
-                          onTap: () => _viewStory(context, index));
+                          onTap: () {
+                            context.go('/chat/${chat.userId}');
+                          });
                     },
                     childCount: chatItems.length,
                   ),
@@ -125,19 +127,7 @@ class ChatListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ChatMessagingScreen(
-              chat: chat,
-              onMessageSent: (newMessage) {
-                // This should be handled by the parent widget
-              },
-            ),
-          ),
-        );
-      },
+      onTap: onTap,
       leading: GestureDetector(
         onTap: onTap,
         behavior: HitTestBehavior.opaque,

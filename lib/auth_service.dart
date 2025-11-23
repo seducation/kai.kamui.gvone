@@ -1,3 +1,4 @@
+import 'package:appwrite/appwrite.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -10,54 +11,66 @@ class User {
 }
 
 class AuthService with ChangeNotifier {
+  Client client = Client();
+  late Account account;
+
   bool _isLoggedIn = false;
   User? _currentUser;
 
   bool get isLoggedIn => _isLoggedIn;
   User? get currentUser => _currentUser;
 
+  AuthService() {
+    client
+        .setEndpoint('https://sgp.cloud.appwrite.io/v1') 
+        .setProject('691948bf001eb3eccd77');
+    account = Account(client);
+    init();
+  }
+
   Future<void> init() async {
-    final prefs = await SharedPreferences.getInstance();
-    _isLoggedIn = prefs.getBool('loggedIn') ?? false;
-    if (_isLoggedIn) {
-      final email = prefs.getString('email') ?? '';
-      // In a real app, you'd fetch the user details from your backend
-      _currentUser = User(id: 'user-123', name: 'Test User', email: email);
+    try {
+      final user = await account.get();
+      _isLoggedIn = true;
+      _currentUser = User(id: user.$id, name: user.name, email: user.email);
+    } on AppwriteException {
+      _isLoggedIn = false;
+      _currentUser = null;
     }
     notifyListeners();
   }
 
   Future<void> login(String email, String password) async {
-    // Simulate a login request.
-    await Future.delayed(const Duration(seconds: 1));
+    await account.createEmailPasswordSession(email: email, password: password);
+    final user = await account.get();
+    _isLoggedIn = true;
+    _currentUser = User(id: user.$id, name: user.name, email: user.email);
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('loggedIn', true);
     await prefs.setString('email', email);
-    _isLoggedIn = true;
-    _currentUser = User(id: 'user-123', name: 'Test User', email: email);
+
     notifyListeners();
   }
 
   Future<void> signOut() async {
-    // Simulate a logout request.
-    await Future.delayed(const Duration(seconds: 1));
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('loggedIn');
-    await prefs.remove('email');
+    await account.deleteSession(sessionId: 'current');
     _isLoggedIn = false;
     _currentUser = null;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
     notifyListeners();
   }
 
-    Future<void> signUp(String email, String password) async {
-    // Simulate a signup request.
-    await Future.delayed(const Duration(seconds: 1));
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('loggedIn', true);
-    await prefs.setString('email', email);
-    _isLoggedIn = true;
-     _currentUser = User(id: 'user-456', name: 'New User', email: email);
-    notifyListeners();
+  Future<void> signUp(String name, String email, String password) async {
+    // Create the user account
+    await account.create(userId: ID.unique(), name: name, email: email, password: password);
+    
+    // Immediately log the user in to create a session
+    await login(email, password);
+
+    // After login, the user state is updated, and the router will redirect.
+    // The profile creation should happen on the screen the user is redirected to.
   }
 
   Future<User?> getCurrentUser() async {
@@ -65,7 +78,8 @@ class AuthService with ChangeNotifier {
   }
 
   Future<void> createPost(Map<String, dynamic> postData) async {
-    // Simulate creating a post
+    // This is likely a database operation and should be handled by a
+    // dedicated database service, not the auth service.
     await Future.delayed(const Duration(seconds: 1));
   }
 }

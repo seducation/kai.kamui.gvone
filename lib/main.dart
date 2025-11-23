@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:my_app/appwrite_service.dart';
+import 'package:my_app/chat_screen.dart';
 import 'package:my_app/results_searches.dart';
 import 'package:provider/provider.dart';
 
@@ -35,6 +37,7 @@ Future<void> main() async {
   runApp(
     MultiProvider(
       providers: [
+        Provider(create: (_) => AppwriteService()),
         ChangeNotifierProvider.value(value: authService),
         ChangeNotifierProvider(create: (_) => ThemeModel()),
       ],
@@ -108,6 +111,10 @@ GoRouter _createRouter(AuthService authService) {
         builder: (context, state) => const ProfileScreen(),
       ),
        GoRoute(
+        path: '/profile/:id',
+        builder: (context, state) => ProfileScreen(key: state.pageKey, userId: state.pathParameters['id']!),
+      ),
+       GoRoute(
         path: '/settings',
         builder: (context, state) => const SettingsScreen(),
       ),
@@ -126,6 +133,12 @@ GoRouter _createRouter(AuthService authService) {
             ),
           ),
         ],
+      ),
+      GoRoute(
+        path: '/chat/:userId',
+        builder: (context, state) => ChatScreen(
+          receiverId: state.pathParameters['userId']!,
+        ),
       ),
        GoRoute(
         path: '/setting_active_status',
@@ -180,7 +193,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _screens = [
     const HomeScreen(),
     const ChatsScreen(),
-    const AboutSearches(),
+    const AboutSearchesScreen(),
     const CommunityScreen(),
     const LensScreen(),
   ];

@@ -1,0 +1,145 @@
+import 'package:flutter/material.dart';
+import 'package:my_app/appwrite_service.dart';
+import 'package:appwrite/models.dart' as models;
+
+class ChatScreen extends StatefulWidget {
+  final String receiverId;
+
+  const ChatScreen({super.key, required this.receiverId});
+
+  @override
+  State<ChatScreen> createState() => _ChatScreenState();
+}
+
+class _ChatScreenState extends State<ChatScreen> {
+  final AppwriteService _appwriteService = AppwriteService();
+  final TextEditingController _messageController = TextEditingController();
+  final List<models.Row> _messages = [];
+  bool _isLoading = false;
+  String? _error;
+  late models.User _currentUser;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentUserAndMessages();
+  }
+
+  Future<void> _loadCurrentUserAndMessages() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      _currentUser = await _appwriteService.getUser();
+      await _fetchMessages();
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _fetchMessages() async {
+    try {
+      final messages = await _appwriteService.getMessages(
+        userId1: _currentUser.$id,
+        userId2: widget.receiverId,
+      );
+      setState(() {
+        _messages.clear();
+        _messages.addAll(messages.rows);
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+      });
+    }
+  }
+
+  Future<void> _sendMessage() async {
+    if (_messageController.text.isEmpty) {
+      return;
+    }
+
+    try {
+      await _appwriteService.sendMessage(
+        senderId: _currentUser.$id,
+        receiverId: widget.receiverId,
+        message: _messageController.text,
+      );
+      _messageController.clear();
+      await _fetchMessages();
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Chat with ${widget.receiverId}'),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null
+                    ? Center(child: Text('Error: $_error'))
+                    : ListView.builder(
+                        reverse: true,
+                        itemCount: _messages.length,
+                        itemBuilder: (context, index) {
+                          final message = _messages[index];
+                          final isMe = message.data['senderId'] == _currentUser.$id;
+                          return Align(
+                            alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                            child: Container(
+                              padding: const EdgeInsets.all(8.0),
+                              margin: const EdgeInsets.all(4.0),
+                              decoration: BoxDecoration(
+                                color: isMe ? Colors.blue : Colors.grey[300],
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              child: Text(
+                                message.data['message'],
+                                style: TextStyle(
+                                  color: isMe ? Colors.white : Colors.black,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _messageController,
+                    decoration: const InputDecoration(
+                      hintText: 'Enter a message',
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.send),
+                  onPressed: _sendMessage,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

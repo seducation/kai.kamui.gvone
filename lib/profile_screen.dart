@@ -1,11 +1,37 @@
+import 'package:appwrite/models.dart' hide User, Row;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'appwrite_service.dart';
 import 'auth_service.dart';
 import 'widgets/add_pop_up_menu.dart';
 
-class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+class ProfileScreen extends StatefulWidget {
+  final String? userId;
+  const ProfileScreen({super.key, this.userId});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  late Future<User?> _userFuture;
+  late Future<RowList> _profilesFuture;
+  final AppwriteService appwriteService = AppwriteService();
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final authService = Provider.of<AuthService>(context, listen: false);
+    _userFuture = authService.getCurrentUser();
+    _userFuture.then((user) {
+      if (user != null) {
+        setState(() {
+          _profilesFuture = appwriteService.getUserProfiles(ownerId: widget.userId ?? user.id);
+        });
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +56,7 @@ class ProfileScreen extends StatelessWidget {
         ],
       ),
       body: FutureBuilder<User?>(
-        future: authService.getCurrentUser(),
+        future: _userFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -100,7 +126,7 @@ class ProfileScreen extends StatelessWidget {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                       '+1 234 567 890', // Placeholder for phone number
+                                      '+1 234 567 890', // Placeholder for phone number
                                       style:
                                           Theme.of(context).textTheme.bodyLarge,
                                     ),
@@ -137,11 +163,47 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text('channel1'),
-                  const SizedBox(height: 8),
-                  const Text('channel2'),
-                  const SizedBox(height: 8),
-                  const Text('channel3'),
+                  FutureBuilder<RowList>(
+                    future: _profilesFuture,
+                    builder: (context, profileSnapshot) {
+                      if (profileSnapshot.connectionState ==
+                          ConnectionState.waiting) {
+                        return const Center(
+                            child: CircularProgressIndicator());
+                      }
+                      if (profileSnapshot.hasError) {
+                        return Center(
+                            child: Text('Error: ${profileSnapshot.error}'));
+                      }
+                      if (!profileSnapshot.hasData ||
+                          profileSnapshot.data!.rows.isEmpty) {
+                        return const Center(child: Text('No profiles found.'));
+                      }
+
+                      final profiles = profileSnapshot.data!.rows;
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: profiles.length,
+                        itemBuilder: (context, index) {
+                          final profile = profiles[index];
+                          return ListTile(
+                            leading: CircleAvatar(
+                              backgroundImage:
+                                  NetworkImage(profile.data['profileImageUrl'] ?? ''),
+                            ),
+                            title: Text(profile.data['name'] ?? 'No Name'),
+                            subtitle: Text(profile.data['type'] ?? 'No Type'),
+                            onTap: () {
+                              final name = profile.data['name'] ?? 'No Name';
+                              final imageUrl = profile.data['profileImageUrl'] ?? '';
+                              context.go('/profile_page?name=$name&imageUrl=$imageUrl');
+                            },
+                          );
+                        },
+                      );
+                    },
+                  ),
                   const SizedBox(height: 16),
                   TextButton(
                     onPressed: () {},

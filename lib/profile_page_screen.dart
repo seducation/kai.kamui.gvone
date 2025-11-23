@@ -9,16 +9,16 @@ import 'package:my_app/psv_shorts_tabscreen.dart';
 import 'package:my_app/psv_videos_tabscreen.dart';
 import 'package:shimmer/shimmer.dart';
 
-class ChannelProfilePage extends StatefulWidget {
+class ProfilePageScreen extends StatefulWidget {
   final String name;
   final String imageUrl;
-  const ChannelProfilePage({super.key, required this.name, required this.imageUrl});
+  const ProfilePageScreen({super.key, required this.name, required this.imageUrl});
 
   @override
-  State<ChannelProfilePage> createState() => _ChannelProfilePageState();
+  State<ProfilePageScreen> createState() => _ProfilePageScreenState();
 }
 
-class _ChannelProfilePageState extends State<ChannelProfilePage> with SingleTickerProviderStateMixin {
+class _ProfilePageScreenState extends State<ProfilePageScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   // Tab Names corresponding to the screenshot
@@ -121,67 +121,12 @@ class _ChannelProfilePageState extends State<ChannelProfilePage> with SingleTick
                                     widget.name,
                                     style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
                                   ),
-                                  const SizedBox(width: 4),
-                                  Icon(Icons.check_circle, size: 16, color: Colors.grey[600])
                                 ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                "@${widget.name.replaceAll(' ', '')} • 8.12M subscribers • 2.4K videos",
-                                style: theme.textTheme.bodySmall,
                               ),
                             ],
                           ),
                         ),
                       ],
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    // Description
-                    Text(
-                      "Welcome to The Official ${widget.name} channel! Subscribe and follow for the latest updates. ...more",
-                      style: theme.textTheme.bodyMedium,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    // Link
-                    Text(
-                      "a.atvi.com/PlayBlackOps7 and 9 more links",
-                      style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Action Buttons
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: theme.colorScheme.onPrimary,
-                          foregroundColor: theme.colorScheme.primary,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                        ),
-                        child: const Text("Subscribe", style: TextStyle(fontWeight: FontWeight.bold)),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton(
-                        onPressed: () {},
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor: theme.colorScheme.secondaryContainer,
-                          foregroundColor: theme.colorScheme.onSecondaryContainer,
-                          side: BorderSide.none,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                        ),
-                        child: const Text("Visit shop", style: TextStyle(fontWeight: FontWeight.bold)),
-                      ),
                     ),
                   ],
                 ),
