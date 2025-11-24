@@ -1,4 +1,4 @@
-import 'package:appwrite/models.dart' hide User, Row;
+import 'package:appwrite/models.dart' as models hide User;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -16,7 +16,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   late Future<User?> _userFuture;
-  late Future<RowList> _profilesFuture;
+  late Future<models.RowList> _profilesFuture;
   final AppwriteService appwriteService = AppwriteService();
 
   @override
@@ -163,7 +163,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  FutureBuilder<RowList>(
+                  FutureBuilder<models.RowList>(
                     future: _profilesFuture,
                     builder: (context, profileSnapshot) {
                       if (profileSnapshot.connectionState ==
@@ -195,9 +195,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             title: Text(profile.data['name'] ?? 'No Name'),
                             subtitle: Text(profile.data['type'] ?? 'No Type'),
                             onTap: () {
-                              final name = profile.data['name'] ?? 'No Name';
-                              final imageUrl = profile.data['profileImageUrl'] ?? '';
-                              context.go('/profile_page?name=$name&imageUrl=$imageUrl');
+                              context.go('/profile/${profile.$id}');
                             },
                           );
                         },
