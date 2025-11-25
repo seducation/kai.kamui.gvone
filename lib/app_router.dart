@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
+import 'package:my_app/about_searches_widgets/about_searches_widget.dart';
 import 'package:my_app/auth_service.dart';
-import 'package:my_app/pps.dart';
+import 'package:my_app/profile_screen.dart';
 import 'package:my_app/search_screen.dart';
 import 'package:my_app/sign_in.dart';
 import 'package:my_app/sign_up.dart';
@@ -37,10 +38,14 @@ class AppRouter {
           ),
         ],
       ),
+       GoRoute(
+        path: '/about-searches',
+        builder: (context, state) => const AboutSearches(),
+      ),
       GoRoute(
         path: '/profile/:id',
         builder: (context, state) =>
-            ProfilePageScreen(profileId: state.pathParameters['id']!),
+            ProfileScreen(userId: state.pathParameters['id']!),
       ),
     ],
     redirect: (context, state) {

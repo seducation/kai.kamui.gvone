@@ -27,7 +27,7 @@ import 'setting_location_screen.dart';
 import 'setting_privacy_screen.dart';
 import 'setting_safety_screen.dart';
 import 'setting_support_screen.dart';
-import 'about_searches.dart';
+import 'about_searches_widgets/about_searches_widget.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
