@@ -35,7 +35,7 @@ class _SelectContactScreenState extends State<SelectContactScreen> {
       final profiles = await _appwriteService.getProfiles();
       if (!mounted) return;
 
-      final contactList = profiles.documents
+      final contactList = profiles.rows
           .where((doc) => doc.data['ownerId'] != _currentUser!.$id) // Exclude self
           .map((doc) => ChatModel(
                 userId: doc.$id, // This is the PROFILE document ID
