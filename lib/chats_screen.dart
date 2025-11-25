@@ -63,14 +63,23 @@ class _ChatsScreenState extends State<ChatsScreen> {
       length: 5,
       child: Scaffold(
         appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () {},
+          leading: Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () {},
+              ),
+              IconButton(
+                icon: const Icon(Icons.search),
+                onPressed: () {},
+              ),
+            ],
           ),
           title: const Text("MyApps"),
+          centerTitle: true,
           actions: [
             IconButton(
-              icon: const Icon(Icons.search),
+              icon: const Icon(Icons.add),
               onPressed: () {},
             ),
             IconButton(

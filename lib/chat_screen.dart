@@ -85,6 +85,19 @@ class _ChatScreenState extends State<ChatScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Chat with ${widget.receiverId}'),
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              // Handle menu item selection
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'settings',
+                child: Text('Settings'),
+              ),
+            ],
+          ),
+        ],
       ),
       body: Column(
         children: [

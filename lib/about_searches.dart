@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:my_app/setting_widget/dark_list_tile.dart';
+import 'package:my_app/setting_widget/dashboard_widget.dart';
 import 'package:my_app/travel_navigation_card.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:my_app/setting_widget/train_widget.dart';
 
 class AboutSearches extends StatefulWidget {
   const AboutSearches({super.key});
@@ -16,6 +18,7 @@ class _AboutSearchesState extends State<AboutSearches> {
   List<Map<String, dynamic>> _searchResults = [];
   bool _isLoading = false;
   bool _isSearching = false;
+  bool _showTrainSearch = false;
 
   @override
   void initState() {
@@ -31,6 +34,12 @@ class _AboutSearchesState extends State<AboutSearches> {
         _searchResults = [];
       });
     }
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      _showTrainSearch = !_showTrainSearch;
+    });
   }
 
   Future<void> _performSearch(String query) async {
@@ -120,40 +129,48 @@ class _AboutSearchesState extends State<AboutSearches> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                Card(
-                  elevation: 3.0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30.0),
-                  ),
-                  child: TextField(
-                    controller: _searchController,
-                    onTap: () {
-                      setState(() {
-                        _isSearching = true;
-                      });
-                    },
-                    decoration: InputDecoration(
-                      hintText: 'Search...',
-                      prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                      suffixIcon: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.swap_horiz, color: Colors.grey),
-                          SizedBox(width: 8),
-                          Icon(Icons.mic, color: Colors.grey),
-                          SizedBox(width: 12),
-                        ],
+                if (_showTrainSearch)
+                  TrainSearchWidget(onToggle: _toggleSearch)
+                else
+                  Card(
+                    elevation: 3.0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30.0),
+                    ),
+                    child: TextField(
+                      controller: _searchController,
+                      onTap: () {
+                        setState(() {
+                          _isSearching = true;
+                        });
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'Search...',
+                        prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                        suffixIcon: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.swap_horiz, color: Colors.grey),
+                              onPressed: _toggleSearch,
+                            ),
+                            const SizedBox(width: 8),
+                            const Icon(Icons.mic, color: Colors.grey),
+                            const SizedBox(width: 12),
+                          ],
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30.0),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: EdgeInsets.zero,
                       ),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(30.0),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: EdgeInsets.zero,
                     ),
                   ),
-                ),
+                const SizedBox(height: 24),
+                const DashboardWidget(),
                 const SizedBox(height: 24),
                 const Text(
                   'Tools',
@@ -209,7 +226,7 @@ class _AboutSearchesState extends State<AboutSearches> {
                   ],
                 ),
                 const SizedBox(height: 24),
-                ShortsRail(),
+                const ShortsRail(),
                 const SizedBox(height: 24),
                 const TravelNavigationCard(),
                 const SizedBox(height: 24),
@@ -361,13 +378,16 @@ class _AboutSearchesState extends State<AboutSearches> {
               decoration: InputDecoration(
                 hintText: 'Search...',
                 prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                suffixIcon: const Row(
+                suffixIcon: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.swap_horiz, color: Colors.grey),
-                    SizedBox(width: 8),
-                    Icon(Icons.mic, color: Colors.grey),
-                    SizedBox(width: 12),
+                    IconButton(
+                      icon: const Icon(Icons.swap_horiz, color: Colors.grey),
+                      onPressed: _toggleSearch,
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.mic, color: Colors.grey),
+                    const SizedBox(width: 12),
                   ],
                 ),
                 filled: true,
