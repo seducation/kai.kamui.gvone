@@ -64,7 +64,6 @@ class _ChatScrState extends State<ChatScr> with TickerProviderStateMixin {
     });
     widget.onMessageSent(text);
     _focusNode.requestFocus();
-    Navigator.pop(context); // Go back to the previous screen
   }
 
   Widget _buildTextComposer() {

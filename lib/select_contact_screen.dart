@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/chat_messaging_screen.dart';
+import 'package:my_app/find_account_page_screen.dart';
 import 'package:my_app/model/chat_model.dart';
 
 class SelectContactScreen extends StatelessWidget {
@@ -90,9 +91,17 @@ class SelectContactScreen extends StatelessWidget {
             label: "New contact",
             trailingIcon: Icons.qr_code,
           ),
-          const ActionItem(
+          ActionItem(
             icon: Icons.search,
             label: "Find",
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const FindAccountPageScreen(),
+                ),
+              );
+            },
           ),
           ActionItem(
             icon: Icons.smart_toy_outlined,

@@ -16,7 +16,7 @@ class _CreateRowDialogState extends State<CreateRowDialog> {
   final _bioController = TextEditingController();
   final _profileImageController = TextEditingController();
   final _bannerImageController = TextEditingController();
-  String _selectedType = "Code";
+  String _selectedType = "profile";
 
   bool _createMore = false;
 
@@ -61,7 +61,7 @@ class _CreateRowDialogState extends State<CreateRowDialog> {
           _profileImageController.clear();
           _bannerImageController.clear();
           setState(() {
-            _selectedType = "Code";
+            _selectedType = "profile";
           });
         }
       } catch (e) {
@@ -128,7 +128,7 @@ class _CreateRowDialogState extends State<CreateRowDialog> {
                       const SizedBox(height: 24),
                       DropdownWidget(
                         label: "Type",
-                        items: const ["Code", "Poll", "Link"],
+                        items: const ["profile", "channel", "thread"],
                         selectedItem: _selectedType,
                         onChanged: (newValue) {
                           setState(() {
