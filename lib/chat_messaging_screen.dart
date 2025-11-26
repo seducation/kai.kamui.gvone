@@ -45,12 +45,10 @@ class _ChatMessagingScreenState extends State<ChatMessagingScreen> {
       _currentUser = await _appwriteService.getUser();
       if (!mounted) return;
 
-      // 1. Get the receiver's profile/channel to find the ownerId
       final receiverProfile = await _appwriteService.getProfile(widget.chat.userId);
       _receiverOwnerId = receiverProfile.data['ownerId'];
       if (!mounted) return;
 
-      // 2. Use the ownerId to create the chatId and fetch messages
       _chatId = _getChatId(_currentUser!.$id, _receiverOwnerId!);
 
       final initialMessages = await _appwriteService.getMessages(
@@ -103,7 +101,6 @@ class _ChatMessagingScreenState extends State<ChatMessagingScreen> {
     _focusNode.requestFocus();
 
     try {
-      // 3. Use the correct ownerId as the receiverId
       await _appwriteService.sendMessage(
         senderId: _currentUser!.$id,
         receiverId: _receiverOwnerId!,

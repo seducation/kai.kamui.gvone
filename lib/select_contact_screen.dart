@@ -50,7 +50,7 @@ class _SelectContactScreenState extends State<SelectContactScreen> {
       contactList = profiles.rows.map((doc) {
         final data = doc.data;
         return ChatModel(
-          userId: data['ownerId']?.toString() ?? '',
+          userId: doc.$id,
           name: data['name']?.toString() ?? 'No Name',
           message: data['status']?.toString() ?? 'No Status',
           time: "",

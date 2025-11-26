@@ -90,7 +90,7 @@ class AppwriteService {
         'followers': [], // Initialize with an empty list
       },
       permissions: [
-        Permission.read(Role.users()),
+        Permission.read(Role.any()),
         Permission.update(Role.user(ownerId)),
         Permission.delete(Role.user(ownerId)),
       ],
@@ -204,7 +204,9 @@ class AppwriteService {
       },
        permissions: [
         Permission.read(Role.user(senderId)),
+        Permission.write(Role.user(senderId)),
         Permission.read(Role.user(receiverId)),
+        Permission.write(Role.user(receiverId)),
       ],
     );
   }
@@ -221,7 +223,9 @@ class AppwriteService {
         queries: [Query.equal('chatId', chatId)],
       );
     } on AppwriteException catch (e) {
-      if (e.type == 'database_get_document_not_found' || e.code == 404) {
+      // If it's a new chat, there are no documents, which can throw a 404.
+      // We will gracefully handle this by returning an empty list.
+      if (e.code == 404 || (e.message?.contains('not found') ?? false)) {
         return models.RowList(total: 0, rows: []);
       }
       rethrow;
