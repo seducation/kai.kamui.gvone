@@ -4,6 +4,7 @@ import 'package:my_app/chat_messaging_screen.dart';
 import 'package:my_app/model/profile.dart';
 import 'package:my_app/appwrite_service.dart';
 import 'package:appwrite/models.dart' as models;
+import 'package:provider/provider.dart';
 
 class FindAccountPageScreen extends StatefulWidget {
   const FindAccountPageScreen({super.key});
@@ -14,15 +15,46 @@ class FindAccountPageScreen extends StatefulWidget {
 
 class _FindAccountPageScreenState extends State<FindAccountPageScreen> {
   final TextEditingController _searchController = TextEditingController();
-  final AppwriteService _appwriteService = AppwriteService();
+  late final AppwriteService _appwriteService;
   List<Profile> _searchResults = [];
   bool _isLoading = false;
   String _error = '';
+  models.User? _currentUser;
+  Set<String> _followingProfileIds = {};
 
   @override
   void initState() {
     super.initState();
+    _appwriteService = context.read<AppwriteService>();
     _searchController.addListener(_onSearchChanged);
+    _loadCurrentUserAndFollowing();
+  }
+
+  Future<void> _loadCurrentUserAndFollowing() async {
+    try {
+      final user = await _appwriteService.getUser();
+      if (!mounted) return;
+      setState(() {
+        _currentUser = user;
+      });
+      await _loadFollowingProfiles();
+    } catch (e) {
+      // Handle error
+    }
+  }
+
+  Future<void> _loadFollowingProfiles() async {
+    if (_currentUser == null) return;
+    try {
+      final result = await _appwriteService.getFollowingProfiles(userId: _currentUser!.$id);
+      if (mounted) {
+        setState(() {
+          _followingProfileIds = result.rows.map((row) => row.$id).toSet();
+        });
+      }
+    } catch (e) {
+      // Handle error
+    }
   }
 
   @override
@@ -54,7 +86,15 @@ class _FindAccountPageScreenState extends State<FindAccountPageScreen> {
 
     try {
       final models.RowList result = await _appwriteService.searchProfiles(name: query);
-      final profiles = result.rows.map((row) => Profile.fromMap(row.data, row.$id)).toList();
+      // Get the profile ID of the current user to exclude it
+      final userProfiles = await _appwriteService.getUserProfiles(ownerId: _currentUser!.$id);
+      final selfProfileId = userProfiles.rows.isNotEmpty ? userProfiles.rows.first.$id : null;
+
+      final profiles = result.rows
+          .where((row) => row.$id != selfProfileId) // Exclude self
+          .map((row) => Profile.fromMap(row.data, row.$id))
+          .toList();
+
       if (mounted) {
         setState(() {
           _searchResults = profiles;
@@ -72,6 +112,38 @@ class _FindAccountPageScreenState extends State<FindAccountPageScreen> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  Future<void> _toggleFollowStatus(String profileId) async {
+    if (_currentUser == null) return;
+
+    final isFollowing = _followingProfileIds.contains(profileId);
+    try {
+      if (isFollowing) {
+        await _appwriteService.unfollowProfile(
+          profileId: profileId,
+          followerId: _currentUser!.$id,
+        );
+      } else {
+        await _appwriteService.followProfile(
+          profileId: profileId,
+          followerId: _currentUser!.$id,
+        );
+      }
+      if (mounted) {
+        setState(() {
+          if (isFollowing) {
+            _followingProfileIds.remove(profileId);
+          } else {
+            _followingProfileIds.add(profileId);
+          }
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error updating follow status: $e")),
+      );
     }
   }
 
@@ -117,6 +189,9 @@ class _FindAccountPageScreenState extends State<FindAccountPageScreen> {
   }
 
   Widget _buildSearchResults() {
+    if (_currentUser == null) {
+       return const Center(child: CircularProgressIndicator());
+    }
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -134,13 +209,7 @@ class _FindAccountPageScreenState extends State<FindAccountPageScreen> {
       itemCount: _searchResults.length,
       itemBuilder: (context, index) {
         final profile = _searchResults[index];
-        final chatModel = ChatModel(
-          userId: profile.id,
-          name: profile.name,
-          message: profile.bio ?? '',
-          time: '',
-          imgPath: profile.imageUrl ?? '',
-        );
+        final isFollowing = _followingProfileIds.contains(profile.id);
         return ListTile(
           leading: CircleAvatar(
             backgroundImage: _isValidUrl(profile.imageUrl)
@@ -152,14 +221,26 @@ class _FindAccountPageScreenState extends State<FindAccountPageScreen> {
           ),
           title: Text(profile.name),
           subtitle: Text(profile.bio ?? ''),
+          trailing: ElevatedButton(
+            onPressed: () => _toggleFollowStatus(profile.id),
+            child: Text(isFollowing ? 'Unfollow' : 'Follow'),
+          ),
           onTap: () {
+            // Optional: Navigate to profile details page or chat
+            final chatModel = ChatModel(
+              userId: profile.id, // This should be the PROFILE ID
+              name: profile.name,
+              message: profile.bio ?? '',
+              time: '',
+              imgPath: profile.imageUrl ?? '',
+            );
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => ChatMessagingScreen(
                   chat: chatModel,
                   onMessageSent: (newMessage) {
-                    // This part might need adjustment depending on how you manage state
+                    // State management for chat updates
                   },
                 ),
               ),

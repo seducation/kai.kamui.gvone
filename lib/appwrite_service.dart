@@ -87,12 +87,25 @@ class AppwriteService {
         'bio': bio,
         'profileImageUrl': profileImageUrl,
         'bannerImageUrl': bannerImageUrl,
+        'followers': [], // Initialize with an empty list
       },
       permissions: [
         Permission.read(Role.users()),
         Permission.update(Role.user(ownerId)),
         Permission.delete(Role.user(ownerId)),
       ],
+    );
+  }
+
+  Future<models.Row> updateProfile({
+    required String profileId,
+    required Map<String, dynamic> data,
+  }) async {
+    return await _db.updateRow(
+      databaseId: databaseId,
+      tableId: profilesCollection,
+      rowId: profileId,
+      data: data,
     );
   }
 
@@ -125,6 +138,49 @@ class AppwriteService {
       tableId: profilesCollection,
     );
   }
+
+  Future<models.Row> followProfile({
+    required String profileId,
+    required String followerId,
+  }) async {
+    final profile = await getProfile(profileId);
+    final List<String> followers = List<String>.from(profile.data['followers'] ?? []);
+    if (!followers.contains(followerId)) {
+      followers.add(followerId);
+      return await updateProfile(
+        profileId: profileId,
+        data: {'followers': followers},
+      );
+    }
+    return profile;
+  }
+
+  Future<models.Row> unfollowProfile({
+    required String profileId,
+    required String followerId,
+  }) async {
+    final profile = await getProfile(profileId);
+    final List<String> followers = List<String>.from(profile.data['followers'] ?? []);
+    if (followers.contains(followerId)) {
+      followers.remove(followerId);
+      return await updateProfile(
+        profileId: profileId,
+        data: {'followers': followers},
+      );
+    }
+    return profile;
+  }
+
+  Future<models.RowList> getFollowingProfiles({required String userId}) async {
+    return _db.listRows(
+      databaseId: databaseId,
+      tableId: profilesCollection,
+      queries: [
+        Query.search('followers', userId),
+      ],
+    );
+  }
+
 
   String _getChatId(String userId1, String userId2) {
     final ids = [userId1, userId2]..sort();
