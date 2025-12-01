@@ -137,7 +137,13 @@ class HMVShortsTabscreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final posts = MockData.getFeed().where((p) => p.type == PostType.image).toList();
-    return ShortsViewerScreen(posts: posts, initialIndex: 0);
+    return PageView.builder(
+        scrollDirection: Axis.vertical,
+        itemCount: posts.length,
+        itemBuilder: (context, index) {
+          return ShortsPage(post: posts[index]);
+        },
+      );
   }
 }
 
@@ -222,53 +228,6 @@ class DetailPage extends StatelessWidget {
 // ---------------------------------------------------------------------------
 // 5. SHORTS VIEWER (YouTube Shorts/TikTok Style)
 // ---------------------------------------------------------------------------
-
-class ShortsViewerScreen extends StatefulWidget {
-  final List<Post> posts;
-  final int initialIndex;
-
-  const ShortsViewerScreen({super.key, required this.posts, required this.initialIndex});
-
-  @override
-  ShortsViewerScreenState createState() => ShortsViewerScreenState();
-}
-
-class ShortsViewerScreenState extends State<ShortsViewerScreen> {
-  late PageController _pageController;
-
-  @override
-  void initState() {
-    super.initState();
-    _pageController = PageController(initialPage: widget.initialIndex);
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      backgroundColor: Colors.black,
-      body: PageView.builder(
-        controller: _pageController,
-        scrollDirection: Axis.vertical,
-        itemCount: widget.posts.length,
-        itemBuilder: (context, index) {
-          return ShortsPage(post: widget.posts[index]);
-        },
-      ),
-    );
-  }
-}
 
 class ShortsPage extends StatelessWidget {
   final Post post;

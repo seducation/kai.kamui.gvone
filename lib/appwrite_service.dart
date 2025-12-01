@@ -233,25 +233,32 @@ class AppwriteService {
   }
 
   Future<List<PosterItem>> getMovies() async {
-    final data = await _db.listRows(
-      databaseId: "691963ed003c37eb797f",
-      tableId: "movies",
-    );
+    try {
+      final data = await _db.listRows(
+        databaseId: "691963ed003c37eb797f",
+        tableId: "movies",
+      );
 
-    return data.rows.map((row) {
-      final imageId = row.data['imageId'];
+      return data.rows.map((row) {
+        final imageId = row.data['imageId'];
 
-      final imageUrl = _storage.getFileView(
-        bucketId: "lens-s",
-        fileId: imageId,
-      ).toString();
+        final imageUrl = _storage.getFileView(
+          bucketId: "lens-s",
+          fileId: imageId,
+        ).toString();
 
-      return PosterItem.fromMap({
-        '\$id': row.$id,
-        'title': row.data['title'],
-        'imageUrl': imageUrl,
-      });
-    }).toList();
+        return PosterItem.fromMap({
+          '\$id': row.$id,
+          'title': row.data['title'],
+          'imageUrl': imageUrl,
+        });
+      }).toList();
+    } on AppwriteException catch (e) {
+      if (e.code == 404) {
+        return [];
+      }
+      rethrow;
+    }
   }
 
   Future<models.RowList> getImages({String? cursor}) async {

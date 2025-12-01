@@ -1,6 +1,9 @@
 import 'package:go_router/go_router.dart';
 import 'package:my_app/about_searches_widgets/about_searches_widget.dart';
 import 'package:my_app/auth_service.dart';
+import 'package:my_app/features/feed_algorithm/feed_algorithm_screen.dart';
+import 'package:my_app/features/feed_algorithm/search_algorithm_screen.dart';
+import 'package:my_app/features/saved/saved_screen.dart';
 import 'package:my_app/profile_screen.dart';
 import 'package:my_app/search_screen.dart';
 import 'package:my_app/sign_in.dart';
@@ -39,7 +42,7 @@ class AppRouter {
           ),
         ],
       ),
-       GoRoute(
+      GoRoute(
         path: '/about-searches',
         builder: (context, state) => const AboutSearches(),
       ),
@@ -50,7 +53,20 @@ class AppRouter {
       ),
       GoRoute(
         path: '/where_to_post',
-        builder: (context, state) => WhereToPostScreen(postData: state.extra as Map<String, dynamic>),
+        builder: (context, state) =>
+            WhereToPostScreen(postData: state.extra as Map<String, dynamic>),
+      ),
+      GoRoute(
+        path: '/feed-algorithm',
+        builder: (context, state) => const FeedAlgorithmScreen(),
+      ),
+      GoRoute(
+        path: '/search-algorithm',
+        builder: (context, state) => const SearchAlgorithmScreen(),
+      ),
+      GoRoute(
+        path: '/saved',
+        builder: (context, state) => const SavedScreen(),
       ),
     ],
     redirect: (context, state) {

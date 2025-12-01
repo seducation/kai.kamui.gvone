@@ -128,6 +128,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   color: _mainTabController.index == 0
                       ? selectedColor
                       : unselectedColor,
+                  shadows: [
+                    Shadow(
+                      blurRadius: 2.0,
+                      color: Colors.black.withAlpha(128),
+                      offset: const Offset(1.0, 1.0),
+                    ),
+                  ],
                 )),
               ),
             ),
@@ -155,6 +162,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           color: isSelected
                               ? selectedColor
                               : unselectedColor,
+                          shadows: [
+                            Shadow(
+                              blurRadius: 2.0,
+                              color: Colors.black.withAlpha(128),
+                              offset: const Offset(1.0, 1.0),
+                            ),
+                          ],
                         )),
                       ),
                     );
@@ -165,12 +179,52 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ],
         );
 
-        AppBar appBar;
+        final tabBarView = TabBarView(
+          controller: _mainTabController,
+          children: _tabs.map<Widget>((name) {
+            if (name == 'search tools') {
+              // The reorderable part of the list excludes the first 2 tabs.
+              final reorderableTabs = _tabs.sublist(2);
+              return TabManagerScreen(
+                tabs: reorderableTabs,
+                onReorder: _onReorder,
+                onAddTab: _onAddTab,
+              );
+            } else if (name == 'chats') {
+              return const ChatsScreen();
+            } else if (name == 'shorts') {
+              return const HMVShortsTabscreen();
+            } else if (name == 'feature') {
+              return const HMVFeaturesTabscreen();
+            } else if (name == 'videos') {
+              return const HMVVideosTabscreen();
+            } else if (name == 'news') {
+              return const HMVNewsTabscreen();
+            } else if (name == 'following') {
+              return const HMVFollowingTabscreen();
+            } else {
+              return Center(child: Text(name));
+            }
+          }).toList(),
+        );
+
         if (_mainTabController.index == 0) {
-          appBar = AppBar(
+          final appBar = AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
             automaticallyImplyLeading: false,
+            flexibleSpace: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withAlpha(179),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
             title: SizedBox(
               height: kToolbarHeight,
               child: tabBarWidget,
@@ -185,11 +239,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   }),
             ],
           );
+          return Stack(
+            children: [
+              tabBarView,
+              Scaffold(
+                backgroundColor: Colors.transparent,
+                appBar: appBar,
+                body: null,
+              ),
+            ],
+          );
         } else {
-            final String currentTitle = (_mainTabController.index < 2)
+          final String currentTitle = (_mainTabController.index < 2)
               ? 'my app'
               : _tabs[_mainTabController.index];
-          appBar = AppBar(
+          final appBar = AppBar(
             leadingWidth: 112,
             leading: Row(
               children: [
@@ -222,39 +286,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             ),
           );
+          return Scaffold(
+            appBar: appBar,
+            body: tabBarView,
+          );
         }
-
-        return Scaffold(
-          appBar: appBar,
-          body: TabBarView(
-            controller: _mainTabController,
-            children: _tabs.map<Widget>((name) {
-              if (name == 'search tools') {
-                // The reorderable part of the list excludes the first 2 tabs.
-                final reorderableTabs = _tabs.sublist(2);
-                return TabManagerScreen(
-                  tabs: reorderableTabs,
-                  onReorder: _onReorder,
-                  onAddTab: _onAddTab,
-                );
-              } else if (name == 'chats') {
-                return const ChatsScreen();
-              } else if (name == 'shorts') {
-                return const HMVShortsTabscreen();
-              } else if (name == 'feature') {
-                return const HMVFeaturesTabscreen();
-              } else if (name == 'videos') {
-                return const HMVVideosTabscreen();
-              } else if (name == 'news') {
-                return const HMVNewsTabscreen();
-              } else if (name == 'following') {
-                return const HMVFollowingTabscreen();
-              } else {
-                return Center(child: Text(name));
-              }
-            }).toList(),
-          ),
-        );
       },
     );
   }
