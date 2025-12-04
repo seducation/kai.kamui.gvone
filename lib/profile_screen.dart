@@ -17,12 +17,12 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   late Future<User?> _userFuture;
   late Future<models.RowList> _profilesFuture;
-  final AppwriteService appwriteService = AppwriteService();
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final authService = Provider.of<AuthService>(context, listen: false);
+    final appwriteService = Provider.of<AppwriteService>(context, listen: false);
     _userFuture = authService.getCurrentUser();
     _userFuture.then((user) {
       if (user != null) {

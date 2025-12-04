@@ -1,27 +1,23 @@
 import 'dart:typed_data';
 import 'package:appwrite/appwrite.dart';
 import 'package:appwrite/models.dart' as models;
+import 'package:my_app/environment.dart';
 import 'community_screen_widget/poster_item.dart';
 
 class AppwriteService {
-  final Client _client = Client();
+  final Client _client;
   late TablesDB _db;
   late Storage _storage;
   late Account _account;
 
-  Client get client => _client; 
+  Client get client => _client;
 
-  static const String databaseId = "691963ed003c37eb797f";
   static const String profilesCollection = "profiles";
   static const String messagesCollection = "messages";
   static const String postsCollection = "posts";
   static const String imagesCollection = "images"; // Added this line
 
-  AppwriteService() {
-    _client
-        .setEndpoint("https://sgp.cloud.appwrite.io/v1")
-        .setProject("691948bf001eb3eccd77");
-
+  AppwriteService(this._client) {
     _db = TablesDB(_client);
     _storage = Storage(_client);
     _account = Account(_client);
@@ -53,11 +49,14 @@ class AppwriteService {
     }
   }
 
-  Future<models.User> getUser() async {
+  Future<models.User?> getUser() async {
     try {
       final user = await _account.get();
       return user;
-    } catch (e) {
+    } on AppwriteException catch (e) {
+      if (e.code == 401) {
+        return null;
+      }
       rethrow;
     }
   }
@@ -79,7 +78,7 @@ class AppwriteService {
     required String bannerImageUrl,
   }) async {
     return await _db.createRow(
-      databaseId: databaseId,
+      databaseId: Environment.appwriteDatabaseId,
       tableId: profilesCollection,
       rowId: ID.unique(),
       data: {
@@ -104,7 +103,7 @@ class AppwriteService {
     required Map<String, dynamic> data,
   }) async {
     return await _db.updateRow(
-      databaseId: databaseId,
+      databaseId: Environment.appwriteDatabaseId,
       tableId: profilesCollection,
       rowId: profileId,
       data: data,
@@ -113,7 +112,7 @@ class AppwriteService {
 
   Future<models.RowList> searchProfiles({required String name}) async {
     return _db.listRows(
-      databaseId: databaseId,
+      databaseId: Environment.appwriteDatabaseId,
       tableId: profilesCollection,
       queries: [Query.search('name', name)],
     );
@@ -121,14 +120,14 @@ class AppwriteService {
 
   Future<models.RowList> getUserProfiles({required String ownerId}) async {
     return await _db.listRows(
-        databaseId: databaseId,
+        databaseId: Environment.appwriteDatabaseId,
         tableId: profilesCollection,
         queries: [Query.equal('ownerId', ownerId)]);
   }
 
   Future<models.Row> getProfile(String profileId) async {
     return await _db.getRow(
-      databaseId: databaseId,
+      databaseId: Environment.appwriteDatabaseId,
       tableId: profilesCollection,
       rowId: profileId,
     );
@@ -136,7 +135,7 @@ class AppwriteService {
 
   Future<models.RowList> getProfiles() async {
     return _db.listRows(
-      databaseId: databaseId,
+      databaseId: Environment.appwriteDatabaseId,
       tableId: profilesCollection,
     );
   }
@@ -175,7 +174,7 @@ class AppwriteService {
 
   Future<models.RowList> getFollowingProfiles({required String userId}) async {
     return _db.listRows(
-      databaseId: databaseId,
+      databaseId: Environment.appwriteDatabaseId,
       tableId: profilesCollection,
       queries: [
         Query.equal('followers', userId),
@@ -196,7 +195,7 @@ class AppwriteService {
   }) async {
     final chatId = _getChatId(senderId, receiverId);
     return await _db.createRow(
-      databaseId: databaseId,
+      databaseId: Environment.appwriteDatabaseId,
       tableId: messagesCollection,
       rowId: ID.unique(),
       data: {
@@ -220,7 +219,7 @@ class AppwriteService {
     final chatId = _getChatId(userId1, userId2);
     try {
       return await _db.listRows(
-        databaseId: databaseId,
+        databaseId: Environment.appwriteDatabaseId,
         tableId: messagesCollection,
         queries: [Query.equal('chatId', chatId)],
       );
@@ -237,7 +236,7 @@ class AppwriteService {
   Future<List<PosterItem>> getMovies() async {
     try {
       final data = await _db.listRows(
-        databaseId: "691963ed003c37eb797f",
+        databaseId: Environment.appwriteDatabaseId,
         tableId: "movies",
       );
 
@@ -245,7 +244,7 @@ class AppwriteService {
         final imageId = row.data['imageId'];
 
         final imageUrl = _storage.getFileView(
-          bucketId: "lens-s",
+          bucketId: Environment.appwriteStorageBucketId,
           fileId: imageId,
         ).toString();
 
@@ -265,28 +264,31 @@ class AppwriteService {
   
   Future<models.RowList> getPosts() async {
     return _db.listRows(
-      databaseId: databaseId,
+      databaseId: Environment.appwriteDatabaseId,
       tableId: postsCollection,
     );
   }
 
   Future<void> createPost(Map<String, dynamic> postData) async {
+    final profile = await getProfile(postData['profile_id']);
+    final ownerId = profile.data['ownerId'];
+
     await _db.createRow(
-      databaseId: databaseId,
+      databaseId: Environment.appwriteDatabaseId,
       tableId: postsCollection,
       rowId: ID.unique(),
       data: postData,
       permissions: [
         Permission.read(Role.any()),
-        Permission.update(Role.user(postData['profile_id'])),
-        Permission.delete(Role.user(postData['profile_id'])),
+        Permission.update(Role.user(ownerId)),
+        Permission.delete(Role.user(ownerId)),
       ],
     );
   }
 
   Future<models.RowList> getImages({String? cursor}) async {
     return await _db.listRows(
-      databaseId: '691963ed003c37eb797f',
+      databaseId: Environment.appwriteDatabaseId,
       tableId: imagesCollection,
       queries: [
         Query.limit(10),
@@ -297,15 +299,15 @@ class AppwriteService {
 
   Future<models.Row> uploadImage({required Uint8List bytes, required String filename}) async {
     final file = await _storage.createFile(
-        bucketId: 'lens-s',
+        bucketId: Environment.appwriteStorageBucketId,
         fileId: ID.unique(),
         file: InputFile.fromBytes(bytes: bytes, filename: filename));
 
     final imageUrl =
-        'https://sgp.cloud.appwrite.io/v1/storage/buckets/lens-s/files/${file.$id}/view?project=691948bf001eb3eccd77';
+        '${Environment.appwritePublicEndpoint}/storage/buckets/${Environment.appwriteStorageBucketId}/files/${file.$id}/view?project=${Environment.appwriteProjectId}';
 
     return await _db.createRow(
-      databaseId: '691963ed003c37eb797f',
+      databaseId: Environment.appwriteDatabaseId,
       tableId: imagesCollection,
       rowId: ID.unique(),
       data: {
@@ -319,7 +321,7 @@ class AppwriteService {
 
   Future<models.File> uploadFile({required Uint8List bytes, required String filename}) async {
     final result = await _storage.createFile(
-      bucketId: "lens-s",
+      bucketId: Environment.appwriteStorageBucketId,
       fileId: ID.unique(),
       file: InputFile.fromBytes(bytes: bytes, filename: filename),
     );

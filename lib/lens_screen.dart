@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:my_app/appwrite_service.dart';
 import 'package:my_app/webview_screen.dart';
+import 'package:provider/provider.dart';
 
 class LensScreen extends StatefulWidget {
   const LensScreen({super.key});
@@ -16,12 +17,12 @@ class LensScreen extends StatefulWidget {
 }
 
 class _LensScreenState extends State<LensScreen> {
-  final AppwriteService _appwriteService = AppwriteService();
   final List<models.Row> _items = [];
   bool _isLoading = false;
   String? _error;
   bool _hasMore = true;
   String? _lastRowId;
+  AppwriteService? _appwriteService;
 
   final _scrollController = ScrollController();
   final ImagePicker _picker = ImagePicker();
@@ -29,6 +30,7 @@ class _LensScreenState extends State<LensScreen> {
   @override
   void initState() {
     super.initState();
+    _appwriteService = context.read<AppwriteService>();
     _fetchData();
 
     _scrollController.addListener(() {
@@ -54,7 +56,7 @@ class _LensScreenState extends State<LensScreen> {
     });
 
     try {
-      final response = await _appwriteService.getImages(cursor: _lastRowId);
+      final response = await _appwriteService!.getImages(cursor: _lastRowId);
 
       if (response.rows.isNotEmpty) {
         setState(() {
@@ -103,18 +105,22 @@ class _LensScreenState extends State<LensScreen> {
     });
 
     try {
-      await _appwriteService.uploadImage(bytes: bytes, filename: filename);
+      await _appwriteService!.uploadImage(bytes: bytes, filename: filename);
 
       // Refresh data after upload
       await _refreshData();
     } on AppwriteException catch (e) {
-      setState(() {
-        _error = e.message;
-      });
+      if (mounted) {
+        setState(() {
+          _error = e.message;
+        });
+      }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 

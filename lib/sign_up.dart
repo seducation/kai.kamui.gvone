@@ -52,12 +52,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 onPressed: () async {
                   if (_formKey.currentState!.validate()) {
                     try {
-                      await Provider.of<AuthService>(context, listen: false).signUp(
+                      final user = await Provider.of<AuthService>(context, listen: false).signUp(
                         _nameController.text,
                         _emailController.text,
                         _passwordController.text,
                       );
-                      // The auth service now handles navigation and state, so no need for manual routing here.
+                      if (context.mounted && user != null) {
+                        context.go('/home');
+                      }
                     } catch (e) {
                       if(context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(

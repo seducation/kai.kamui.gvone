@@ -10,6 +10,7 @@ import 'package:my_app/tabs/podcasts_tab.dart';
 import 'package:my_app/tabs/posts_tab.dart';
 import 'package:my_app/tabs/shorts_tab.dart';
 import 'package:my_app/tabs/videos_tab.dart';
+import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 
 class ProfilePageScreen extends StatefulWidget {
@@ -44,7 +45,7 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: _tabs.length, vsync: this);
-    _appwriteService = AppwriteService();
+    _appwriteService = context.read<AppwriteService>();
     _fetchProfile();
   }
 

@@ -36,6 +36,14 @@ class _CreateRowDialogState extends State<CreateRowDialog> {
             Provider.of<AppwriteService>(context, listen: false);
         final user = await appwriteService.getUser();
 
+        if (user == null) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('You must be logged in to create a profile.')),
+            );
+            return;
+        }
+
         // --- Check for existing profile --- 
         if (_selectedType == 'profile') {
           final existingProfiles = await appwriteService.getUserProfiles(ownerId: user.$id);

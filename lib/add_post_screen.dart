@@ -1,11 +1,14 @@
+import 'dart:convert';
 import 'dart:ui';
 
 import 'package:appwrite/appwrite.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import 'appwrite_service.dart';
+import 'where_to_post.dart';
 
 // Mimics the functionality of the provided React PostEditor component.
 class AddPostScreen extends StatefulWidget {
@@ -21,7 +24,6 @@ class _AddPostScreenState extends State<AddPostScreen> {
   final _descriptionController = TextEditingController();
   final _tagsController = TextEditingController();
   final _codeController = TextEditingController();
-  final _appwriteService = AppwriteService();
 
   List<PlatformFile> _selectedFiles = [];
 
@@ -72,20 +74,29 @@ class _AddPostScreenState extends State<AddPostScreen> {
       return;
     }
 
+    if (_codeController.text.length > 5000) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Code snippet cannot exceed 5000 characters')),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
     try {
+      final appwriteService = context.read<AppwriteService>();
       // 1. Upload files
       List<String> uploadedFileIds = [];
       for (final file in _selectedFiles) {
         if (file.bytes != null) {
-            final uploadedFile = await _appwriteService.uploadFile(
-                bytes: file.bytes!,
-                filename: file.name,
-            );
-            uploadedFileIds.add(uploadedFile.$id);
+          final uploadedFile = await appwriteService.uploadFile(
+            bytes: file.bytes!,
+            filename: file.name,
+          );
+          uploadedFileIds.add(uploadedFile.$id);
         }
       }
 
@@ -94,16 +105,19 @@ class _AddPostScreenState extends State<AddPostScreen> {
         'caption': _descriptionController.text,
         'tags': _tagsController.text.split(',').map((s) => s.trim()).toList(),
         'location': '', // Placeholder
-        'snippet': {
+        'snippet': jsonEncode({
           'language': _codeLang,
           'content': _codeController.text,
-        },
+        }),
         'file_ids': uploadedFileIds,
       };
 
-      // Navigate to the next screen, passing the post data
+      // Show the WhereToPostScreen as a modal bottom sheet
       if (mounted) {
-        context.go('/where_to_post', extra: postData);
+        showModalBottomSheet(
+          context: context,
+          builder: (context) => WhereToPostScreen(postData: postData),
+        );
       }
     } on AppwriteException catch (e) {
       if (mounted) {

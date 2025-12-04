@@ -6,6 +6,7 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
+import 'package:appwrite/appwrite.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_app/auth_service.dart';
@@ -15,6 +16,8 @@ import 'package:provider/provider.dart';
 import 'package:my_app/main.dart';
 
 class MockAuthService extends AuthService {
+  MockAuthService(super.client);
+
   @override
   Future<void> init() async {}
 
@@ -33,7 +36,7 @@ void main() {
           ),
         ],
         child: MyApp(
-          authService: MockAuthService(),
+          authService: MockAuthService(Client()),
         ),
       ),
     );

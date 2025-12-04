@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/appwrite_service.dart';
 import 'package:appwrite/models.dart' as models;
+import 'package:provider/provider.dart';
 
 class ChatScreen extends StatefulWidget {
   final String receiverId;
@@ -12,12 +13,11 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final AppwriteService _appwriteService = AppwriteService();
   final TextEditingController _messageController = TextEditingController();
   final List<models.Row> _messages = [];
   bool _isLoading = false;
   String? _error;
-  late models.User _currentUser;
+  models.User? _currentUser;
 
   @override
   void initState() {
@@ -30,8 +30,11 @@ class _ChatScreenState extends State<ChatScreen> {
       _isLoading = true;
     });
     try {
-      _currentUser = await _appwriteService.getUser();
-      await _fetchMessages();
+      final appwriteService = context.read<AppwriteService>();
+      _currentUser = await appwriteService.getUser();
+      if (_currentUser != null) {
+        await _fetchMessages();
+      }
     } catch (e) {
       setState(() {
         _error = e.toString();
@@ -44,9 +47,11 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _fetchMessages() async {
+    if (_currentUser == null) return;
     try {
-      final messages = await _appwriteService.getMessages(
-        userId1: _currentUser.$id,
+      final appwriteService = context.read<AppwriteService>();
+      final messages = await appwriteService.getMessages(
+        userId1: _currentUser!.$id,
         userId2: widget.receiverId,
       );
       setState(() {
@@ -61,13 +66,14 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _sendMessage() async {
-    if (_messageController.text.isEmpty) {
+    if (_messageController.text.isEmpty || _currentUser == null) {
       return;
     }
 
     try {
-      await _appwriteService.sendMessage(
-        senderId: _currentUser.$id,
+      final appwriteService = context.read<AppwriteService>();
+      await appwriteService.sendMessage(
+        senderId: _currentUser!.$id,
         receiverId: widget.receiverId,
         message: _messageController.text,
       );
@@ -106,31 +112,33 @@ class _ChatScreenState extends State<ChatScreen> {
                 ? const Center(child: CircularProgressIndicator())
                 : _error != null
                     ? Center(child: Text('Error: $_error'))
-                    : ListView.builder(
-                        reverse: true,
-                        itemCount: _messages.length,
-                        itemBuilder: (context, index) {
-                          final message = _messages[index];
-                          final isMe = message.data['senderId'] == _currentUser.$id;
-                          return Align(
-                            alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                            child: Container(
-                              padding: const EdgeInsets.all(8.0),
-                              margin: const EdgeInsets.all(4.0),
-                              decoration: BoxDecoration(
-                                color: isMe ? Colors.blue : Colors.grey[300],
-                                borderRadius: BorderRadius.circular(8.0),
-                              ),
-                              child: Text(
-                                message.data['message'],
-                                style: TextStyle(
-                                  color: isMe ? Colors.white : Colors.black,
+                    : _currentUser == null
+                        ? const Center(child: Text('Please log in to view messages.'))
+                        : ListView.builder(
+                            reverse: true,
+                            itemCount: _messages.length,
+                            itemBuilder: (context, index) {
+                              final message = _messages[index];
+                              final isMe = message.data['senderId'] == _currentUser!.$id;
+                              return Align(
+                                alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                                child: Container(
+                                  padding: const EdgeInsets.all(8.0),
+                                  margin: const EdgeInsets.all(4.0),
+                                  decoration: BoxDecoration(
+                                    color: isMe ? Colors.blue : Colors.grey[300],
+                                    borderRadius: BorderRadius.circular(8.0),
+                                  ),
+                                  child: Text(
+                                    message.data['message'],
+                                    style: TextStyle(
+                                      color: isMe ? Colors.white : Colors.black,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                              );
+                            },
+                          ),
           ),
           Padding(
             padding: const EdgeInsets.all(8.0),

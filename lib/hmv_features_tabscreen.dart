@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/appwrite_service.dart';
+import 'package:provider/provider.dart';
 import './profile_page.dart';
 import 'dart:math';
 import 'model/profile.dart';
@@ -154,7 +155,7 @@ class _HMVFeaturesTabscreenState extends State<HMVFeaturesTabscreen> {
   @override
   void initState() {
     super.initState();
-    _appwriteService = AppwriteService();
+    _appwriteService = context.read<AppwriteService>();
     _fetchPosts();
   }
 

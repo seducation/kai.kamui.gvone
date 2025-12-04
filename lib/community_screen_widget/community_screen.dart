@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'hero_banner.dart';
 import 'status_rail_section.dart';
 import '../appwrite_service.dart';
@@ -13,8 +14,6 @@ class CommunityScreen extends StatefulWidget {
 }
 
 class _CommunityScreenState extends State<CommunityScreen> {
-  final service = AppwriteService();
-
   List<PosterItem> movies = [];
   bool loading = true;
 
@@ -25,6 +24,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Future<void> loadContent() async {
+    final service = context.read<AppwriteService>();
     final data = await service.getMovies();
     setState(() {
       movies = data;

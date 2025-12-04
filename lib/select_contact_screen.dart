@@ -44,20 +44,21 @@ class _SelectContactScreenState extends State<SelectContactScreen> {
       final currentUser = await _appwriteService.getUser();
       if (!mounted) return;
 
-      final profiles = await _appwriteService.getFollowingProfiles(userId: currentUser.$id);
-      if (!mounted) return;
+      if (currentUser != null) {
+        final profiles = await _appwriteService.getFollowingProfiles(userId: currentUser.$id);
+        if (!mounted) return;
 
-      contactList = profiles.rows.map((doc) {
-        final data = doc.data;
-        return ChatModel(
-          userId: doc.$id,
-          name: data['name']?.toString() ?? 'No Name',
-          message: data['status']?.toString() ?? 'No Status',
-          time: "",
-          imgPath: data['profileImageUrl']?.toString() ?? '',
-        );
-      }).where((contact) => contact.userId.isNotEmpty).toList();
-
+        contactList = profiles.rows.map((doc) {
+          final data = doc.data;
+          return ChatModel(
+            userId: doc.$id,
+            name: data['name']?.toString() ?? 'No Name',
+            message: data['status']?.toString() ?? 'No Status',
+            time: "",
+            imgPath: data['profileImageUrl']?.toString() ?? '',
+          );
+        }).where((contact) => contact.userId.isNotEmpty).toList();
+      }
     } catch (e) {
       error = "Error loading contacts: $e";
     }
@@ -80,8 +81,19 @@ class _SelectContactScreenState extends State<SelectContactScreen> {
   Future<void> _handleContactTap(ChatModel contact) async {
     final navigator = Navigator.of(context);
     try {
-      await _appwriteService.getUser(); // Ensure user is still logged in
+      final user = await _appwriteService.getUser(); // Ensure user is still logged in
       if (!mounted) return;
+
+      if (user == null) {
+        // If user is null, session expired or not logged in
+        await navigator.pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const SignInScreen(),
+          ),
+        );
+        return; // Don't proceed to chat screen
+      }
+
       await navigator.push(
         MaterialPageRoute(
           builder: (context) => ChatMessagingScreen(
@@ -97,7 +109,7 @@ class _SelectContactScreenState extends State<SelectContactScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      // If getUser fails, it means session expired
+      // If getUser throws another exception (not 401), we also go to sign in.
       await navigator.pushReplacement(
         MaterialPageRoute(
           builder: (context) => const SignInScreen(),

@@ -18,7 +18,6 @@ class WhereToPostScreen extends StatefulWidget {
 
 class _WhereToPostScreenState extends State<WhereToPostScreen> {
   late Future<List<Profile>> _profilesFuture;
-  final AppwriteService _appwriteService = AppwriteService();
   final List<String> _selectedProfileIds = [];
   bool _isPublishing = false;
 
@@ -31,7 +30,8 @@ class _WhereToPostScreenState extends State<WhereToPostScreen> {
 
   Future<List<Profile>> _fetchUserProfiles(String userId) async {
     try {
-      final response = await _appwriteService.getUserProfiles(ownerId: userId);
+      final appwriteService = context.read<AppwriteService>();
+      final response = await appwriteService.getUserProfiles(ownerId: userId);
       return response.rows.map((row) => Profile.fromMap(row.data, row.$id)).toList();
     } catch (e) {
       if (mounted) {
@@ -65,7 +65,7 @@ class _WhereToPostScreenState extends State<WhereToPostScreen> {
       _isPublishing = true;
     });
 
-    final authService = Provider.of<AuthService>(context, listen: false);
+    final appwriteService = context.read<AppwriteService>();
     
     try {
       final postFutures = _selectedProfileIds.map((profileId) {
@@ -73,7 +73,7 @@ class _WhereToPostScreenState extends State<WhereToPostScreen> {
           ...widget.postData,
           'profile_id': profileId, 
         };
-        return authService.createPost(postData);
+        return appwriteService.createPost(postData);
       });
 
       await Future.wait(postFutures);
@@ -102,9 +102,7 @@ class _WhereToPostScreenState extends State<WhereToPostScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Post to...'),
-      ),
+         
       body: FutureBuilder<List<Profile>>(
         future: _profilesFuture,
         builder: (context, snapshot) {

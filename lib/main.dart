@@ -1,7 +1,9 @@
+import 'package:appwrite/appwrite.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:my_app/appwrite_service.dart';
 import 'package:my_app/chat_screen.dart';
+import 'package:my_app/environment.dart';
 import 'package:my_app/results_searches.dart';
 import 'package:my_app/where_to_post.dart';
 import 'package:provider/provider.dart';
@@ -32,13 +34,18 @@ import 'about_searches_widgets/about_searches_widget.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final authService = AuthService();
+
+  final Client client = Client()
+    ..setEndpoint(Environment.appwritePublicEndpoint)
+    ..setProject(Environment.appwriteProjectId);
+
+  final authService = AuthService(client);
   await authService.init();
 
   runApp(
     MultiProvider(
       providers: [
-        Provider(create: (_) => AppwriteService()),
+        Provider(create: (_) => AppwriteService(client)),
         ChangeNotifierProvider.value(value: authService),
         ChangeNotifierProvider(create: (_) => ThemeModel()),
       ],

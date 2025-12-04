@@ -7,6 +7,8 @@ import 'package:my_app/model/chat_model.dart';
 import 'package:my_app/widgets/chat_app_bar.dart';
 import 'package:appwrite/appwrite.dart';
 import 'package:appwrite/models.dart' as models;
+import 'package:my_app/environment.dart';
+import 'package:provider/provider.dart';
 
 class ChatMessagingScreen extends StatefulWidget {
   final ChatModel chat;
@@ -35,7 +37,7 @@ class _ChatMessagingScreenState extends State<ChatMessagingScreen> {
   @override
   void initState() {
     super.initState();
-    _appwriteService = AppwriteService();
+    _appwriteService = context.read<AppwriteService>();
     _realtime = Realtime(_appwriteService.client);
     _loadChat();
   }
@@ -74,7 +76,7 @@ class _ChatMessagingScreenState extends State<ChatMessagingScreen> {
   }
 
   void _subscribeToMessages() {
-    const channel = 'databases.${AppwriteService.databaseId}.collections.${AppwriteService.messagesCollection}.documents';
+    const channel = 'databases.${Environment.appwriteDatabaseId}.collections.${AppwriteService.messagesCollection}.documents';
     _subscription = _realtime.subscribe([channel]);
 
     _subscription!.stream.listen((response) {
