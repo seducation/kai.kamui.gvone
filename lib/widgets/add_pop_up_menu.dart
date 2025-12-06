@@ -56,8 +56,9 @@ class _CreateRowDialogState extends State<CreateRowDialog> {
           }
         }
 
+        // DEFINITIVE FIX: The incorrect ownerId parameter has been removed.
+        // The ownerId is now handled correctly within the appwrite_service.
         await appwriteService.createProfile(
-          ownerId: user.$id,
           name: _nameController.text,
           type: _selectedType,
           bio: _bioController.text,

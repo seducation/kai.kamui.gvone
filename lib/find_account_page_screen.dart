@@ -229,7 +229,7 @@ class _FindAccountPageScreenState extends State<FindAccountPageScreen> {
           onTap: () {
             // Optional: Navigate to profile details page or chat
             final chatModel = ChatModel(
-              userId: profile.ownerId, // This should be the USER ID
+              userId: profile.id, // This should be the PROFILE ID
               name: profile.name,
               message: profile.bio ?? '',
               time: '',

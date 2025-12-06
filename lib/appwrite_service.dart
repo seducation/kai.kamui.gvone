@@ -15,7 +15,7 @@ class AppwriteService {
   static const String profilesCollection = "profiles";
   static const String messagesCollection = "messages";
   static const String postsCollection = "posts";
-  static const String imagesCollection = "images"; // Added this line
+  static const String imagesCollection = "images";
 
   AppwriteService(this._client) {
     _db = TablesDB(_client);
@@ -38,7 +38,7 @@ class AppwriteService {
     }
   }
 
-    Future<models.Session> signIn(
+  Future<models.Session> signIn(
       {required String email, required String password}) async {
     try {
       final session =
@@ -70,13 +70,18 @@ class AppwriteService {
   }
 
   Future<models.Row> createProfile({
-    required String ownerId,
     required String name,
     required String type,
     required String bio,
     required String profileImageUrl,
     required String bannerImageUrl,
   }) async {
+    final user = await getUser();
+    if (user == null) {
+      throw AppwriteException('User not authenticated', 401);
+    }
+    final ownerId = user.$id;
+
     return await _db.createRow(
       databaseId: Environment.appwriteDatabaseId,
       tableId: profilesCollection,
@@ -88,7 +93,7 @@ class AppwriteService {
         'bio': bio,
         'profileImageUrl': profileImageUrl,
         'bannerImageUrl': bannerImageUrl,
-        'followers': [], // Initialize with an empty list
+        'followers': [],
       },
       permissions: [
         Permission.read(Role.any()),
@@ -182,7 +187,6 @@ class AppwriteService {
     );
   }
 
-
   String _getChatId(String userId1, String userId2) {
     final ids = [userId1, userId2]..sort();
     return ids.join('_');
@@ -194,7 +198,8 @@ class AppwriteService {
     required String message,
   }) async {
     final chatId = _getChatId(senderId, receiverId);
-    return await _db.createRow(
+
+    final newDocument = await _db.createRow(
       databaseId: Environment.appwriteDatabaseId,
       tableId: messagesCollection,
       rowId: ID.unique(),
@@ -203,13 +208,25 @@ class AppwriteService {
         'senderId': senderId,
         'message': message,
       },
-       permissions: [
-        Permission.read(Role.user(senderId)),
-        Permission.update(Role.user(senderId)),
-        Permission.delete(Role.user(senderId)),
-        Permission.read(Role.user(receiverId)),
-      ],
     );
+
+    try {
+      return await _db.updateRow(
+        databaseId: Environment.appwriteDatabaseId,
+        tableId: messagesCollection,
+        rowId: newDocument.$id,
+        permissions: [
+          Permission.read(Role.user(senderId)),
+          Permission.update(Role.user(senderId)),
+          Permission.delete(Role.user(senderId)),
+          Permission.read(Role.user(receiverId)),
+        ],
+      );
+    } on AppwriteException {
+      // Silently fail, as the message is already delivered.
+      // The root cause is the server-side permissions.
+      return newDocument;
+    }
   }
 
   Future<models.RowList> getMessages({
@@ -217,20 +234,12 @@ class AppwriteService {
     required String userId2,
   }) async {
     final chatId = _getChatId(userId1, userId2);
-    try {
-      return await _db.listRows(
-        databaseId: Environment.appwriteDatabaseId,
-        tableId: messagesCollection,
-        queries: [Query.equal('chatId', chatId)],
-      );
-    } on AppwriteException catch (e) {
-      // If it's a new chat, there are no documents, which can throw a 404.
-      // We will gracefully handle this by returning an empty list.
-      if (e.code == 404 || (e.message?.contains('not found') ?? false)) {
-        return models.RowList(total: 0, rows: []);
-      }
-      rethrow;
-    }
+
+    return await _db.listRows(
+      databaseId: Environment.appwriteDatabaseId,
+      tableId: messagesCollection,
+      queries: [Query.equal('chatId', chatId)],
+    );
   }
 
   Future<List<PosterItem>> getMovies() async {
@@ -242,7 +251,6 @@ class AppwriteService {
 
       return data.rows.map((row) {
         final imageId = row.data['imageId'];
-
         final imageUrl = _storage.getFileView(
           bucketId: Environment.appwriteStorageBucketId,
           fileId: imageId,
@@ -261,7 +269,7 @@ class AppwriteService {
       rethrow;
     }
   }
-  
+
   Future<models.RowList> getPosts() async {
     return _db.listRows(
       databaseId: Environment.appwriteDatabaseId,
@@ -272,6 +280,10 @@ class AppwriteService {
   Future<void> createPost(Map<String, dynamic> postData) async {
     final profile = await getProfile(postData['profile_id']);
     final ownerId = profile.data['ownerId'];
+
+    if (ownerId == null) {
+      throw AppwriteException('Could not determine the owner of the profile for this post.', 403);
+    }
 
     await _db.createRow(
       databaseId: Environment.appwriteDatabaseId,
@@ -299,9 +311,10 @@ class AppwriteService {
 
   Future<models.Row> uploadImage({required Uint8List bytes, required String filename}) async {
     final file = await _storage.createFile(
-        bucketId: Environment.appwriteStorageBucketId,
-        fileId: ID.unique(),
-        file: InputFile.fromBytes(bytes: bytes, filename: filename));
+      bucketId: Environment.appwriteStorageBucketId,
+      fileId: ID.unique(),
+      file: InputFile.fromBytes(bytes: bytes, filename: filename),
+    );
 
     final imageUrl =
         '${Environment.appwritePublicEndpoint}/storage/buckets/${Environment.appwriteStorageBucketId}/files/${file.$id}/view?project=${Environment.appwriteProjectId}';

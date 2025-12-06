@@ -3,6 +3,7 @@ import 'package:my_app/appwrite_service.dart';
 import 'package:my_app/chat_messaging_screen.dart';
 import 'package:my_app/find_account_page_screen.dart';
 import 'package:my_app/model/chat_model.dart';
+import 'package:my_app/model/profile.dart';
 import 'package:my_app/sign_in.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
@@ -18,7 +19,7 @@ class SelectContactScreen extends StatefulWidget {
 
 class _SelectContactScreenState extends State<SelectContactScreen> {
   late final AppwriteService _appwriteService;
-  List<ChatModel> _contacts = [];
+  List<Profile> _contacts = [];
   bool _isLoading = true;
   bool _didInitialize = false;
 
@@ -38,7 +39,7 @@ class _SelectContactScreenState extends State<SelectContactScreen> {
 
   Future<void> _loadFollowingContacts() async {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
-    List<ChatModel> contactList = [];
+    List<Profile> contactList = [];
     String? error;
     try {
       final currentUser = await _appwriteService.getUser();
@@ -49,15 +50,8 @@ class _SelectContactScreenState extends State<SelectContactScreen> {
         if (!mounted) return;
 
         contactList = profiles.rows.map((doc) {
-          final data = doc.data;
-          return ChatModel(
-            userId: doc.$id,
-            name: data['name']?.toString() ?? 'No Name',
-            message: data['status']?.toString() ?? 'No Status',
-            time: "",
-            imgPath: data['profileImageUrl']?.toString() ?? '',
-          );
-        }).where((contact) => contact.userId.isNotEmpty).toList();
+          return Profile.fromMap(doc.data, doc.$id);
+        }).toList();
       }
     } catch (e) {
       error = "Error loading contacts: $e";
@@ -78,28 +72,35 @@ class _SelectContactScreenState extends State<SelectContactScreen> {
     });
   }
 
-  Future<void> _handleContactTap(ChatModel contact) async {
+  Future<void> _handleContactTap(Profile contact) async {
     final navigator = Navigator.of(context);
     try {
       final user = await _appwriteService.getUser(); // Ensure user is still logged in
       if (!mounted) return;
 
       if (user == null) {
-        // If user is null, session expired or not logged in
         await navigator.pushReplacement(
           MaterialPageRoute(
             builder: (context) => const SignInScreen(),
           ),
         );
-        return; // Don't proceed to chat screen
+        return;
       }
+
+      final chatModel = ChatModel(
+        userId: contact.id, // Pass the Profile ID
+        name: contact.name,
+        message: contact.bio ?? '',
+        time: "",
+        imgPath: contact.profileImageUrl ?? '',
+      );
 
       await navigator.push(
         MaterialPageRoute(
           builder: (context) => ChatMessagingScreen(
-            chat: contact,
+            chat: chatModel,
             onMessageSent: (newMessage) {
-              final newChat = contact;
+              final newChat = chatModel;
               newChat.message = newMessage;
               newChat.time = "Now";
               widget.onNewChat(newChat);
@@ -109,7 +110,6 @@ class _SelectContactScreenState extends State<SelectContactScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      // If getUser throws another exception (not 401), we also go to sign in.
       await navigator.pushReplacement(
         MaterialPageRoute(
           builder: (context) => const SignInScreen(),
@@ -166,7 +166,6 @@ class _SelectContactScreenState extends State<SelectContactScreen> {
           : ListView(
               children: [
                 const SizedBox(height: 10),
-                // Contact Items
                 ..._contacts.map((contact) => ContactItem(
                       contact: contact,
                       onTap: () => _handleContactTap(contact),
@@ -180,7 +179,7 @@ class _SelectContactScreenState extends State<SelectContactScreen> {
 
 // Widget for individual contacts
 class ContactItem extends StatelessWidget {
-  final ChatModel contact;
+  final Profile contact;
   final VoidCallback onTap;
 
   const ContactItem({super.key, required this.contact, required this.onTap});
@@ -197,16 +196,14 @@ class ContactItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return ListTile(
-      onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       leading: CircleAvatar(
         radius: 22,
         backgroundColor: Colors.grey[300],
-        // Use a placeholder if the image path is empty or invalid
-        backgroundImage: _isValidUrl(contact.imgPath)
-            ? NetworkImage(contact.imgPath)
+        backgroundImage: _isValidUrl(contact.profileImageUrl)
+            ? NetworkImage(contact.profileImageUrl!)
             : null,
-        child: !_isValidUrl(contact.imgPath)
+        child: !_isValidUrl(contact.profileImageUrl)
             ? Text(
                 contact.name.isNotEmpty ? contact.name[0] : "",
                 style: TextStyle(
@@ -217,22 +214,22 @@ class ContactItem extends StatelessWidget {
               )
             : null,
       ),
-      title: Row(
-        children: [
-          Text(
-            contact.name,
-            style: theme.textTheme.titleMedium,
-          ),
-        ],
+      title: Text(
+        contact.name,
+        style: theme.textTheme.titleMedium,
       ),
       subtitle: Padding(
         padding: const EdgeInsets.only(top: 2.0),
         child: Text(
-          contact.message, // This should be 'status' from the profile
+          contact.bio ?? 'No bio',
           style: theme.textTheme.bodySmall,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
+      ),
+      trailing: IconButton(
+        icon: const Icon(Icons.chat),
+        onPressed: onTap,
       ),
     );
   }
