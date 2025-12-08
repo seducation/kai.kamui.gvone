@@ -208,7 +208,6 @@ class _HMVFeaturesTabscreenState extends State<HMVFeaturesTabscreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _buildFeed(),

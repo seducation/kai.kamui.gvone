@@ -50,7 +50,7 @@ class _ResultsSearchesState extends State<ResultsSearches> with TickerProviderSt
   void initState() {
     super.initState();
     _searchController = TextEditingController(text: widget.query);
-    _mainTabController = TabController(length: _tabs.length, vsync: this);
+    _mainTabController = TabController(length: _tabs.length, vsync: this, initialIndex: 1);
     _searchService = SearchService(context.read<AppwriteService>());
     _performSearch();
   }
