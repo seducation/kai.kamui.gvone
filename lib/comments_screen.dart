@@ -1,9 +1,9 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:my_app/appwrite_service.dart';
 import 'package:my_app/hmv_features_tabscreen.dart';
-import 'package:provider/provider.dart';
 import 'package:my_app/model/profile.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:provider/provider.dart';
 
 class CommentsScreen extends StatefulWidget {
   final Post post;
@@ -17,20 +17,20 @@ class CommentsScreen extends StatefulWidget {
 class _Comment {
   final String text;
   final Profile? author;
-  final String userId;
+  final String profileId;
   final DateTime timestamp;
 
   _Comment({
     required this.text,
     this.author,
-    required this.userId,
+    required this.profileId,
     required this.timestamp,
   });
 }
 
 class _CommentsScreenState extends State<CommentsScreen> {
   late AppwriteService _appwriteService;
-  late List<_Comment> _comments;
+  List<_Comment> _comments = [];
   final TextEditingController _commentController = TextEditingController();
   bool _isLoading = true;
 
@@ -48,18 +48,17 @@ class _CommentsScreenState extends State<CommentsScreen> {
       final profilesResponse = await _appwriteService.getProfiles();
 
       final profilesMap = {
-        for (var p in profilesResponse.rows)
-          p.data['ownerId']: Profile.fromMap(p.data, p.$id)
+        for (var p in profilesResponse.rows) p.$id: Profile.fromMap(p.data, p.$id)
       };
 
       final comments = commentsResponse.rows.map((row) {
-        final userId = row.data['user_id'] as String;
-        final author = profilesMap[userId];
+        final profileId = row.data['profile_id'] as String;
+        final author = profilesMap[profileId];
 
         return _Comment(
           text: row.data['text'] as String? ?? '',
           author: author,
-          userId: userId,
+          profileId: profileId,
           timestamp:
               DateTime.tryParse(row.data['timestamp'] ?? '') ?? DateTime.now(),
         );
@@ -87,21 +86,42 @@ class _CommentsScreenState extends State<CommentsScreen> {
     }
 
     final user = await _appwriteService.getUser();
+    if (!mounted) return;
+
     if (user == null) {
-      // Handle user not being authenticated
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('You must be logged in to comment.'),
+      ));
       return;
     }
+
+    final profiles = await _appwriteService.getUserProfiles(ownerId: user.$id);
+    if (!mounted) return;
+
+    final userProfiles = profiles.rows.where((p) => p.data['type'] == 'profile');
+
+    if (userProfiles.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('You must have a user profile to comment.'),
+      ));
+      return;
+    }
+
+    final profileId = userProfiles.first.$id;
 
     try {
       await _appwriteService.createComment(
         postId: widget.post.id,
-        userId: user.$id,
+        profileId: profileId,
         text: _commentController.text,
       );
       _commentController.clear();
       await _fetchComments(); // Refresh comments
     } catch (e) {
-      // Handle error
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Failed to add comment. Please try again.'),
+      ));
     }
   }
 
@@ -160,7 +180,7 @@ class _CommentsScreenState extends State<CommentsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      author?.name ?? 'Unknown User (${comment.userId})',
+                      author?.name ?? 'Unknown User (${comment.profileId})',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     Text(comment.text),

@@ -352,23 +352,29 @@ class AppwriteService {
 
   Future<void> createComment({
     required String postId,
-    required String userId,
+    required String profileId,
     required String text,
   }) async {
+    final profile = await getProfile(profileId);
+    final ownerId = profile.data['ownerId'];
+    if (ownerId == null) {
+      throw AppwriteException('Could not determine the owner of the profile.', 403);
+    }
+
     await _db.createRow(
       databaseId: Environment.appwriteDatabaseId,
       tableId: commentsCollection,
       rowId: ID.unique(),
       data: {
         'post_id': postId,
-        'user_id': userId,
+        'profile_id': profileId,
         'text': text,
         'timestamp': DateTime.now().toIso8601String(),
       },
       permissions: [
         Permission.read(Role.any()),
-        Permission.update(Role.user(userId)),
-        Permission.delete(Role.user(userId)),
+        Permission.update(Role.user(ownerId)),
+        Permission.delete(Role.user(ownerId)),
       ],
     );
   }
