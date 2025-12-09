@@ -149,7 +149,7 @@ class _CreateRowDialogState extends State<CreateRowDialog> {
                       const SizedBox(height: 24),
                       DropdownWidget(
                         label: "Type",
-                        items: const ["profile", "channel", "thread"],
+                        items: const ["profile", "channel", "thread", "business"],
                         selectedItem: _selectedType,
                         onChanged: (newValue) {
                           setState(() {

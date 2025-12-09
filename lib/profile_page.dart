@@ -54,16 +54,19 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
   }
 
   Future<void> _loadProfileData() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
     });
     try {
       final user = await _authService.getCurrentUser();
+      if (!mounted) return;
       _currentUserId = user?.id;
-      
+
       final profile = await _appwriteService.getProfile(widget.profileId);
+      if (!mounted) return;
       final followers = List<String>.from(profile.data['followers'] ?? []);
-      
+
       setState(() {
         _profile = Profile.fromMap(profile.data, profile.$id);
         _followersCount = followers.length;
@@ -73,6 +76,7 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
@@ -120,6 +124,71 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
     }
   }
 
+  Future<void> _showEditProfileDialog() async {
+    final nameController = TextEditingController(text: _profile?.name);
+    final bioController = TextEditingController(text: _profile?.bio);
+    
+    // Store the Navigator and ScaffoldMessenger before the async gap.
+    final navigator = Navigator.of(context);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    await showDialog<void>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Edit Profile'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: 'Name'),
+                ),
+                TextField(
+                  controller: bioController,
+                  decoration: const InputDecoration(labelText: 'Bio'),
+                  maxLines: 3,
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Save'),
+              onPressed: () async {
+                if (_profile == null) return;
+                try {
+                  await _appwriteService.updateProfile(
+                    profileId: _profile!.id,
+                    data: {
+                      'name': nameController.text,
+                      'bio': bioController.text,
+                    },
+                  );
+                  
+                  // Use the cached navigator to pop the dialog
+                  navigator.pop();
+                  _loadProfileData(); // Reload data to show changes
+                } catch (e) {
+                  // Use the cached scaffoldMessenger to show a snackbar
+                  scaffoldMessenger.showSnackBar(
+                    SnackBar(content: Text('Failed to update profile: $e')),
+                  );
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     _tabController.dispose();
@@ -128,7 +197,11 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isCurrentUser = _currentUserId != null && _currentUserId == _profile?.ownerId;
+    final isCurrentUser =
+        _currentUserId != null && _currentUserId == _profile?.ownerId;
+    final accountTypes = ['profile', 'channel', 'thread', 'business'];
+    final showEditButton =
+        isCurrentUser && _profile != null && accountTypes.contains(_profile!.type);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -305,6 +378,13 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
                     ],
                   ),
                 ),
+      floatingActionButton: showEditButton
+          ? FloatingActionButton(
+              onPressed: _showEditProfileDialog,
+              backgroundColor: Colors.black,
+              child: const Icon(Icons.edit),
+            )
+          : null,
     );
   }
 }
