@@ -325,7 +325,29 @@ class _PostWidgetState extends State<PostWidget> {
     _appwriteService = context.read<AppwriteService>();
   }
 
-  void _toggleLike() {
+  Future<void> _toggleLike() async {
+    final user = await _appwriteService.getUser();
+    if (!mounted) return;
+
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('You must be logged in to like posts.'),
+      ));
+      return;
+    }
+
+    final profiles = await _appwriteService.getUserProfiles(ownerId: user.$id);
+    if (!mounted) return;
+
+    final userProfiles = profiles.rows.where((p) => p.data['type'] == 'profile');
+
+    if (userProfiles.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('You must have a user profile to like a post.'),
+      ));
+      return;
+    }
+
     setState(() {
       _isLiked = !_isLiked;
       if (_isLiked) {
@@ -335,7 +357,24 @@ class _PostWidgetState extends State<PostWidget> {
       }
     });
 
-    _appwriteService.updatePostLikes(widget.post.id, _likeCount);
+    try {
+      await _appwriteService.updatePostLikes(widget.post.id, _likeCount);
+    } catch (e) {
+      // Revert the state if the update fails
+      setState(() {
+        _isLiked = !_isLiked;
+        if (_isLiked) {
+          _likeCount++;
+        } else {
+          _likeCount--;
+        }
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Failed to update like. Please try again.'),
+        ));
+      }
+    }
   }
 
   void _openComments() {

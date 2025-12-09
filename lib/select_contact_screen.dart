@@ -49,7 +49,9 @@ class _SelectContactScreenState extends State<SelectContactScreen> {
         final profiles = await _appwriteService.getFollowingProfiles(userId: currentUser.$id);
         if (!mounted) return;
 
-        contactList = profiles.rows.map((doc) {
+        contactList = profiles.rows
+            .where((doc) => doc.data['type'] == 'profile')
+            .map((doc) {
           return Profile.fromMap(doc.data, doc.$id);
         }).toList();
       }
