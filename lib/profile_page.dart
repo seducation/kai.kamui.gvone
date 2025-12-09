@@ -391,6 +391,7 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
                   Padding(
                     padding: const EdgeInsets.only(right: 8.0),
                     child: FloatingActionButton(
+                      heroTag: 'addProduct',
                       onPressed: () {
                         Navigator.push(
                           context,
@@ -404,6 +405,7 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
                     ),
                   ),
                 FloatingActionButton(
+                  heroTag: 'editProfile',
                   onPressed: _showEditProfileDialog,
                   backgroundColor: Colors.black,
                   child: const Icon(Icons.edit),
