@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/appwrite_service.dart';
 import 'package:my_app/model/post.dart';
+import 'package:my_app/model/profile.dart';
 import 'package:my_app/widgets/post_item.dart';
 import 'package:provider/provider.dart';
 
@@ -44,14 +45,18 @@ class _PostsTabState extends State<PostsTab> {
         final creatorProfileData = profilesMap[row.data['profile_id']];
         if (creatorProfileData == null) return null;
 
-        final authorName = creatorProfileData['name'];
-        final profileImageUrl = creatorProfileData['profileImageUrl'];
+        final author = Profile.fromMap(creatorProfileData, row.data['profile_id']);
 
-        final author = User(
-          name: authorName,
-          avatarUrl: profileImageUrl != null && profileImageUrl.isNotEmpty
-              ? _appwriteService.getFileViewUrl(profileImageUrl)
+        final updatedAuthor = Profile(
+          id: author.id,
+          name: author.name,
+          type: author.type,
+          bio: author.bio,
+          profileImageUrl: author.profileImageUrl != null && author.profileImageUrl!.isNotEmpty
+              ? _appwriteService.getFileViewUrl(author.profileImageUrl!)
               : 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png',
+          ownerId: author.ownerId,
+          createdAt: author.createdAt,
         );
 
         final fileIdsData = row.data['file_ids'];
@@ -61,24 +66,34 @@ class _PostsTabState extends State<PostsTab> {
         if (postTypeString == null && fileIds.isNotEmpty) {
           postTypeString = 'image'; // Infer type for old data
         }
-        final postType = _getPostType(postTypeString);
+
+        final postType = _getPostType(postTypeString, row.data['linkUrl']);
 
         String? mediaUrl;
-
         if (fileIds.isNotEmpty) {
-            mediaUrl = _appwriteService.getFileViewUrl(fileIds.first);
+          mediaUrl = _appwriteService.getFileViewUrl(fileIds.first);
         }
+
+        final postStats = PostStats(
+          likes: row.data['likes'] ?? 0,
+          comments: row.data['comments'] ?? 0,
+          shares: row.data['shares'] ?? 0,
+          views: row.data['views'] ?? 0,
+        );
 
         return Post(
           id: row.$id,
-          author: author,
+          author: updatedAuthor,
           timestamp: DateTime.tryParse(row.data['timestamp'] ?? '') ?? DateTime.now(),
+          contentText: row.data['caption'] ?? '',
           mediaUrl: mediaUrl,
-          caption: row.data['caption'],
           type: postType,
+          stats: postStats,
+          linkUrl: row.data['linkUrl'],
+          linkTitle: row.data['linkTitle'],
         );
       }).where((post) => post != null).cast<Post>().toList();
-      
+
       if (!mounted) return;
       setState(() {
         _posts = posts;
@@ -92,7 +107,10 @@ class _PostsTabState extends State<PostsTab> {
     }
   }
 
-  PostType _getPostType(String? type) {
+  PostType _getPostType(String? type, String? linkUrl) {
+    if (linkUrl != null && linkUrl.isNotEmpty) {
+      return PostType.linkPreview;
+    }
     switch (type) {
       case 'image':
         return PostType.image;
