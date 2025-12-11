@@ -1,466 +1,124 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/appwrite_service.dart';
+import 'package:my_app/tabs/home_tab.dart';
+import 'package:my_app/widgets/post_item.dart';
+import 'package:provider/provider.dart';
 
-// --- Data Model (The "Base") ---
-class NewsItem {
-  final String sourceName;
-  final String sourceIcon; // Using simple string for mock logic
-  final String timeAgo;
-  final String? headline;
-  final String bodyText;
-  final String? imageUrl;
-  final String linkUrl; // The URL to navigate to (mocked)
-
-  NewsItem({
-    required this.sourceName,
-    required this.sourceIcon,
-    required this.timeAgo,
-    this.headline,
-    required this.bodyText,
-    this.imageUrl,
-    this.linkUrl = "https://example.com/article-123", // Default mock URL
-  });
-}
-
-// --- Mock Data Service ---
-class DataService {
-  static List<NewsItem> getNews() {
-    return [
-      NewsItem(
-        sourceName: "Apple Inc.",
-        sourceIcon: "apple",
-        timeAgo: "6 days ago",
-        headline: "We've overhauled our list of the best TVs to give you the most up-to-date recommendations - just in time for...",
-        bodyText: "Apple Inc. is a multinational technology company known for its consumer electronics, online services, including the iPhone and iPad product lines.",
-        imageUrl: "https://images.unsplash.com/photo-1556656793-02715d8dd660?auto=format&fit=crop&w=800&q=80", // Placeholder for Apple-like tech image
-        linkUrl: "https://medium.com/apple-report/tv-recommendations",
-      ),
-      NewsItem(
-        sourceName: "Gaming News",
-        sourceIcon: "gamepad",
-        timeAgo: "2 hours ago",
-        headline: "NEW FREE GHOST SKIN...",
-        bodyText: "The new Free Ghost Skin is Crazy... Check out the latest updates in the season pass.",
-        imageUrl: "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80", // Placeholder for Gaming/Ghost skin
-        linkUrl: "https://youtube.com/watch?v=ghost-skin-reveal",
-      ),
-      NewsItem(
-        sourceName: "Anime Weekly",
-        sourceIcon: "tv",
-        timeAgo: "1 day ago",
-        headline: null,
-        bodyText: "Vegeta and Goku face off in the latest chapter! The stakes have never been higher.",
-        imageUrl: "https://images.unsplash.com/photo-1623945202970-4dbdd3d65052?auto=format&fit=crop&w=800&q=80", // Placeholder for Anime style
-        linkUrl: "https://wikipedia.org/dragonball-chapter-210",
-      ),
-    ];
-  }
-}
-
-class PostsTab extends StatelessWidget {
-  const PostsTab({super.key});
+class PostsTab extends StatefulWidget {
+  final String profileId;
+  const PostsTab({super.key, required this.profileId});
 
   @override
-  Widget build(BuildContext context) {
-    final newsItems = DataService.getNews();
-
-    return Container(
-      color: Colors.white,
-      child: ListView.separated(
-        itemCount: newsItems.length,
-        separatorBuilder: (ctx, i) => const Divider(height: 1, color: Color(0xFFE0E0E0)),
-        itemBuilder: (context, index) {
-          return NewsCard(item: newsItems[index]);
-        },
-      ),
-    );
-  }
+  State<PostsTab> createState() => _PostsTabState();
 }
 
-// ---------------------------------------------------------------------------
-// NEWS CARD (with Navigation logic)
-// ---------------------------------------------------------------------------
-
-class NewsCard extends StatelessWidget {
-  final NewsItem item;
-
-  const NewsCard({super.key, required this.item});
-
-  // Function to handle the navigation when the card is tapped
-  void _openDetail(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => DetailPage(item: item),
-      ),
-    );
-  }
+class _PostsTabState extends State<PostsTab> {
+  late AppwriteService _appwriteService;
+  List<Post> _posts = [];
+  bool _isLoading = true;
 
   @override
-  Widget build(BuildContext context) {
-    // Wrap the card content in GestureDetector for the tap event
-    return GestureDetector(
-      onTap: () => _openDetail(context),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        color: Colors.white,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header Row
-            Row(
-              children: [
-                _buildSourceIcon(item.sourceIcon),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.sourceName,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                    ],
-                  ),
-                ),
-                Icon(Icons.more_vert, size: 20, color: Colors.grey[600]),
-              ],
-            ),
-            
-            const SizedBox(height: 12),
-
-            // Content Row (Text + Image/Link Preview)
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (item.headline != null)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 8.0),
-                          child: Text(
-                            item.headline!,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              height: 1.3,
-                              color: Colors.blue,
-                            ),
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      Text(
-                        item.bodyText,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[800],
-                          height: 1.4,
-                        ),
-                        maxLines: item.headline == null ? 4 : 3,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Text(
-                            item.timeAgo,
-                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                          ),
-                          const SizedBox(width: 8),
-                          // The "blue link" text
-                          Text(
-                            item.linkUrl.split('/')[2].replaceAll('www.', ''), // Display domain
-                            style: const TextStyle(
-                              fontSize: 12, 
-                              color: Colors.blueAccent,
-                              decoration: TextDecoration.underline,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                if (item.imageUrl != null) ...[
-                  const SizedBox(width: 16),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      item.imageUrl!,
-                      width: 100,
-                      height: 100,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        width: 100,
-                        height: 100,
-                        color: Colors.grey[200],
-                        child: Icon(Icons.image, color: Colors.grey[400]),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
-            // Action Bar
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Left actions (Reaction/Comments mockup)
-                Row(
-                  children: [
-                    Icon(Icons.favorite_border, size: 20, color: Colors.grey[600]),
-                    const SizedBox(width: 24),
-                    Icon(Icons.chat_bubble_outline, size: 20, color: Colors.grey[600]),
-                  ],
-                ),
-                // Right actions (Share/Bookmark)
-                Row(
-                  children: [
-                     Icon(Icons.share_outlined, size: 20, color: Colors.grey[600]),
-                     const SizedBox(width: 24),
-                     Icon(Icons.bookmark_border, size: 20, color: Colors.grey[600]),
-                  ],
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
+  void initState() {
+    super.initState();
+    _appwriteService = context.read<AppwriteService>();
+    _loadPosts();
   }
 
-  Widget _buildSourceIcon(String type) {
-    IconData icon;
-    Color color;
-    
-    switch (type) {
-      case 'apple':
-        icon = Icons.apple;
-        color = Colors.black87;
-        break;
-      case 'gamepad':
-        icon = Icons.gamepad;
-        color = Colors.purpleAccent;
-        break;
-      case 'tv':
-        icon = Icons.tv;
-        color = Colors.orange;
-        break;
-      default:
-        icon = Icons.article;
-        color = Colors.blue;
+  Future<void> _loadPosts() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final results = await Future.wait([
+        _appwriteService.getPostsFromUsers([widget.profileId]),
+        _appwriteService.getProfiles(),
+      ]);
+
+      final postsResponse = results[0];
+      final profilesResponse = results[1];
+
+      final profilesMap = {for (var doc in profilesResponse.rows) doc.$id: doc.data};
+
+      final posts = postsResponse.rows.map((row) {
+        final creatorProfileData = profilesMap[row.data['profile_id']];
+        if (creatorProfileData == null) return null;
+
+        final authorName = creatorProfileData['name'];
+        final profileImageUrl = creatorProfileData['profileImageUrl'];
+
+        final author = User(
+          name: authorName,
+          avatarUrl: profileImageUrl != null && profileImageUrl.isNotEmpty
+              ? _appwriteService.getFileViewUrl(profileImageUrl)
+              : 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png',
+        );
+
+        final fileIdsData = row.data['file_ids'];
+        final List<String> fileIds = fileIdsData is List ? List<String>.from(fileIdsData.map((id) => id.toString())) : [];
+
+        String? postTypeString = row.data['type'];
+        if (postTypeString == null && fileIds.isNotEmpty) {
+          postTypeString = 'image'; // Infer type for old data
+        }
+        final postType = _getPostType(postTypeString);
+
+        String? mediaUrl;
+
+        if (fileIds.isNotEmpty) {
+          if (postType == PostType.image) {
+            mediaUrl = _appwriteService.getFileViewUrl(fileIds.first);
+          } else if (postType == PostType.video) {
+            mediaUrl = _appwriteService.getFileThumbnailUrl(fileIds.first);
+          }
+        }
+
+        return Post(
+          id: row.$id,
+          author: author,
+          timestamp: DateTime.tryParse(row.data['timestamp'] ?? '') ?? DateTime.now(),
+          mediaUrl: mediaUrl,
+          caption: row.data['caption'],
+          type: postType,
+        );
+      }).where((post) => post != null).cast<Post>().toList();
+      
+      if (!mounted) return;
+      setState(() {
+        _posts = posts;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
     }
-
-    return Stack(
-      children: [
-        Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: Colors.grey[200],
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 2),
-          ),
-          child: Icon(icon, size: 18, color: color),
-        ),
-        Positioned(
-          right: 0,
-          bottom: 0,
-          child: Container(
-            width: 12,
-            height: 12,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  color: Colors.black,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.star, size: 6, color: Colors.white)
-              ),
-            ),
-          ),
-        )
-      ],
-    );
   }
-}
 
-// ---------------------------------------------------------------------------
-// DETAIL PAGE (The YouTube/Medium/Wikipedia Mockup)
-// ---------------------------------------------------------------------------
-
-class DetailPage extends StatelessWidget {
-  final NewsItem item;
-
-  const DetailPage({super.key, required this.item});
+  PostType _getPostType(String? type) {
+    switch (type) {
+      case 'image':
+        return PostType.image;
+      case 'video':
+        return PostType.video;
+      default:
+        return PostType.text;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
-        title: Text(item.linkUrl.split('/')[2].replaceAll('www.', ''), style: TextStyle(color: Colors.grey[600], fontSize: 14)),
-        actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.share_outlined)),
-          IconButton(onPressed: () {}, icon: const Icon(Icons.more_vert)),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1. Featured Media (Video or Article Image)
-            if (item.imageUrl != null)
-              Container(
-                height: 250,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: NetworkImage(item.imageUrl!),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                child: Center(
-                  // Show Play button for mock video content
-                  child: item.sourceIcon == 'gamepad' || item.sourceIcon == 'tv'
-                      ? Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.red.withAlpha(204),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.play_arrow, size: 40, color: Colors.white),
-                        )
-                      : null,
-                ),
-              ),
-            
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 2. Headline
-                  Text(
-                    item.headline ?? "Detailed Article: ${item.sourceName}",
-                    style: const TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                      height: 1.2,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // 3. Author/Source Info
-                  Row(
-                    children: [
-                      _buildSourceIcon(item.sourceIcon),
-                      const SizedBox(width: 8),
-                      Text(
-                        item.sourceName,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
-                      ),
-                      const Text(
-                        " • 5 min read",
-                        style: TextStyle(fontSize: 14, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                  const Divider(height: 30, color: Color(0xFFE0E0E0)),
-
-                  // 4. Detailed Body Content Mockup
-                  Text(
-                    item.bodyText,
-                    style: TextStyle(fontSize: 16, color: Colors.grey[800], height: 1.5),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    "This is the expanded content section, simulating the full page view you requested, similar to a Medium article or YouTube video description. Here, you would find paragraphs of text, more images, comments, and related videos, depending on the platform being mimicked.",
-                    style: TextStyle(fontSize: 16, color: Colors.grey[800], height: 1.5),
-                  ),
-                  const SizedBox(height: 30),
-
-                  // 5. Related/Action Section Mockup
-                  const Text(
-                    "Related Content",
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
-                  ),
-                  const SizedBox(height: 10),
-                  _buildRelatedItem("More from ${item.sourceName}", Icons.arrow_forward_ios),
-                  _buildRelatedItem("View Comments (1.2K)", Icons.comment),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSourceIcon(String type) {
-    IconData icon;
-    Color color;
-    
-    switch (type) {
-      case 'apple':
-        icon = Icons.apple;
-        color = Colors.black87;
-        break;
-      case 'gamepad':
-        icon = Icons.gamepad;
-        color = Colors.purpleAccent;
-        break;
-      case 'tv':
-        icon = Icons.tv;
-        color = Colors.orange;
-        break;
-      default:
-        icon = Icons.article;
-        color = Colors.blue;
-    }
-
-    return Container(
-      width: 32,
-      height: 32,
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 2),
-      ),
-      child: Icon(icon, size: 18, color: color),
-    );
-  }
-  
-  Widget _buildRelatedItem(String title, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(title, style: const TextStyle(fontSize: 16, color: Colors.blueAccent)),
-          Icon(icon, size: 16, color: Colors.grey[600]),
-        ],
-      ),
-    );
+    return _isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : _posts.isEmpty
+            ? const Center(child: Text("No posts found"))
+            : ListView.builder(
+                itemCount: _posts.length,
+                itemBuilder: (context, index) {
+                  final post = _posts[index];
+                  return PostItem(post: post);
+                },
+              );
   }
 }

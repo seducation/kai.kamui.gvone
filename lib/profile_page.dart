@@ -56,12 +56,12 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
       if (!mounted) return;
       _currentUserId = user?.id;
 
-      final profile = await _appwriteService.getProfile(widget.profileId);
+      final profileRow = await _appwriteService.getProfile(widget.profileId);
       if (!mounted) return;
-      final followers = List<String>.from(profile.data['followers'] ?? []);
+      final followers = List<String>.from(profileRow.data['followers'] ?? []);
 
       setState(() {
-        _profile = Profile.fromMap(profile.data, profile.$id);
+        _profile = Profile.fromRow(profileRow);
         _followersCount = followers.length;
         if (_currentUserId != null) {
           _isFollowing = followers.contains(_currentUserId);
@@ -417,18 +417,18 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
   }
 
   List<Widget> _getTabViewsForProfile(Profile? profile) {
-    final baseTabViews = [
-      const HomeTab(),
-      const PostsTab(),
-      const VideosTab(),
-      const ShortsTab(),
-      const LiveTab(),
-      const PodcastsTab(),
+    final List<Widget> baseTabViews = [
+      HomeTab(profileId: widget.profileId),
+      PostsTab(profileId: widget.profileId),
+      VideosTab(profileId: widget.profileId),
+      ShortsTab(profileId: widget.profileId),
+      LiveTab(profileId: widget.profileId),
+      PodcastsTab(profileId: widget.profileId),
     ];
-    if (profile?.type == 'business') {
-      baseTabViews.add(const ProductsTab());
+    if (profile != null && profile.type == 'business') {
+      baseTabViews.add(ProductsTab(profileId: profile.id));
     }
-    baseTabViews.add(const AboutTab());
+    baseTabViews.add(AboutTab(profileId: widget.profileId));
     return baseTabViews;
   }
 }
