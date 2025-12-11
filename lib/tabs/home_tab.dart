@@ -1,9 +1,10 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:my_app/appwrite_client.dart';
 import 'package:my_app/appwrite_service.dart';
 import 'package:my_app/post_detail_screen.dart';
+import 'package:provider/provider.dart';
 
-enum PostType { text, image, video }
+enum PostType { text, image, video, podcast, live, short }
 
 class User {
   final String name;
@@ -18,6 +19,7 @@ class User {
 class Post {
   final String id;
   final User author;
+  final DateTime timestamp;
   final String? mediaUrl;
   final String caption;
   final PostType type;
@@ -25,6 +27,7 @@ class Post {
   Post({
     required this.id,
     required this.author,
+    required this.timestamp,
     this.mediaUrl,
     required this.caption,
     required this.type,
@@ -32,7 +35,8 @@ class Post {
 }
 
 class HomeTab extends StatefulWidget {
-  const HomeTab({super.key});
+  final String profileId;
+  const HomeTab({super.key, required this.profileId});
 
   @override
   State<HomeTab> createState() => _HomeTabState();
@@ -42,37 +46,67 @@ class _HomeTabState extends State<HomeTab> {
   late AppwriteService _appwriteService;
   List<Post> _posts = [];
   bool _isLoading = true;
-  String? _error;
 
   @override
   void initState() {
     super.initState();
-    _appwriteService = AppwriteService(AppwriteClient().client);
+    _appwriteService = context.read<AppwriteService>();
     _fetchPosts();
   }
 
   Future<void> _fetchPosts() async {
     try {
-      final postsResponse = await _appwriteService.getPosts();
-      final posts = await Future.wait(postsResponse.rows.map((row) async {
-        final authorProfile =
-            await _appwriteService.getProfile(row.data['profile_id']);
+      final results = await Future.wait([
+        _appwriteService.getPostsFromUsers([widget.profileId]),
+        _appwriteService.getProfiles(),
+      ]);
+      final postsResponse = results[0];
+      final profilesResponse = results[1];
+      final profilesMap = {
+        for (var doc in profilesResponse.rows) doc.$id: doc.data
+      };
+      final posts = postsResponse.rows.map((row) {
+        final creatorProfileData = profilesMap[row.data['profile_id']];
+        if (creatorProfileData == null) {
+          return null; 
+        }
+        final authorName = creatorProfileData['name'];
+        final profileImageUrl = creatorProfileData['profileImageUrl'];
         final author = User(
-          name: authorProfile.data['name'],
-          avatarUrl: authorProfile.data['profileImageUrl'],
+          name: authorName,
+          avatarUrl: profileImageUrl != null && profileImageUrl.isNotEmpty
+              ? _appwriteService.getFileViewUrl(profileImageUrl)
+              : 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png',
         );
+        final fileIdsData = row.data['file_ids'];
+        final List<String> fileIds =
+            fileIdsData is List ? List<String>.from(fileIdsData.map((id) => id.toString())) : [];
+        String? postTypeString = row.data['type'];
+        if (postTypeString == null && fileIds.isNotEmpty) {
+          postTypeString = 'image'; 
+        }
+        final postType = _getPostType(postTypeString);
+        String? mediaUrl;
+        if (fileIds.isNotEmpty) {
+          if (postType == PostType.image || postType == PostType.video) {
+            mediaUrl = _appwriteService.getFileViewUrl(fileIds.first);
+          }
+        }
         return Post(
           id: row.$id,
           author: author,
-          mediaUrl: row.data['mediaUrl'],
+          timestamp:
+              DateTime.tryParse(row.data['timestamp'] ?? '') ?? DateTime.now(),
+          mediaUrl: mediaUrl,
           caption: row.data['caption'],
-          type: _getPostType(row.data['type']),
+          type: postType,
         );
-      }));
-
+      }).where((post) => post != null).cast<Post>().toList();
+      final imagePosts = posts.where((p) => p.mediaUrl != null).toList();
+      imagePosts.sort((a, b) => b.timestamp.compareTo(a.timestamp));
       if (mounted) {
         setState(() {
-          _posts = posts;
+          _posts = imagePosts;
           _isLoading = false;
         });
       }
@@ -81,7 +115,6 @@ class _HomeTabState extends State<HomeTab> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _error = e.toString();
         });
       }
     }
@@ -93,6 +126,12 @@ class _HomeTabState extends State<HomeTab> {
         return PostType.image;
       case 'video':
         return PostType.video;
+      case 'podcast':
+        return PostType.podcast;
+      case 'live':
+        return PostType.live;
+      case 'short':
+        return PostType.short;
       default:
         return PostType.text;
     }
@@ -101,65 +140,55 @@ class _HomeTabState extends State<HomeTab> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _error != null
-                ? Center(
-                    child: Text(
-                    'Error: $_error',
-                    style: const TextStyle(color: Colors.red),
-                  ))
-                : GridView.builder(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      crossAxisSpacing: 2,
-                      mainAxisSpacing: 2,
-                    ),
-                    itemCount: _posts.length,
-                    itemBuilder: (context, index) {
-                      final post = _posts[index];
-                      if (post.mediaUrl == null) {
-                        return Container(color: Colors.grey[800]);
-                      }
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  PostDetailScreen(post: post),
-                            ),
-                          );
-                        },
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            Image.network(
-                              post.mediaUrl!,
-                              fit: BoxFit.cover,
-                              loadingBuilder: (ctx, child, progress) {
-                                if (progress == null) return child;
-                                return Container(color: Colors.grey[900]);
-                              },
-                              errorBuilder: (ctx, err, stack) =>
-                                  Container(color: Colors.grey[900]),
-                            ),
-                            if (post.type == PostType.video)
-                              const Align(
-                                alignment: Alignment.topRight,
-                                child: Padding(
-                                  padding: EdgeInsets.all(8.0),
-                                  child: Icon(
-                                    Icons.play_circle_outline,
-                                    color: Colors.white,
-                                  ),
-                                ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : GridView.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 2,
+                mainAxisSpacing: 2,
+              ),
+              itemCount: _posts.length,
+              itemBuilder: (context, index) {
+                final post = _posts[index];
+                if (post.mediaUrl == null) {
+                  return Container(color: Colors.grey[800]);
+                }
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PostDetailScreen(post: post),
+                      ),
+                    );
+                  },
+                  child: Card(
+                    clipBehavior: Clip.antiAlias,
+                    child: GridTile(
+                      footer: post.type == PostType.video
+                          ? const GridTileBar(
+                              backgroundColor: Colors.black45,
+                              trailing: Icon(
+                                Icons.play_circle_outline,
+                                color: Colors.white,
                               ),
-                          ],
-                        ),
-                      );
-                    },
-                  ));
+                            )
+                          : null,
+                      child: CachedNetworkImage(
+                        imageUrl: post.mediaUrl!,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) =>
+                            Container(color: Colors.white),
+                        errorWidget: (context, url, error) {
+                          return Container(color: Colors.grey[900]);
+                        },
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+    );
   }
 }

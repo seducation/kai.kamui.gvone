@@ -34,6 +34,8 @@ dependencies:
   web_socket_channel: ^3.0.3
   appwrite: ^20.3.2
   timeago: ^3.6.1
+  video_player: ^2.8.6
+  visibility_detector: ^0.4.0+2
 
 dev_dependencies:
   flutter_test:

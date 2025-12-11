@@ -54,7 +54,7 @@ class _CommentsScreenState extends State<CommentsScreen> {
       final profilesResponse = await _appwriteService.getProfiles();
 
       final profilesMap = {
-        for (var p in profilesResponse.rows) p.$id: Profile.fromMap(p.data, p.$id)
+        for (var p in profilesResponse.rows) p.$id: Profile.fromRow(p)
       };
 
       final allComments = commentsResponse.rows.map((row) {

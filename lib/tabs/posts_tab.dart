@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/appwrite_service.dart';
-import 'package:my_app/tabs/home_tab.dart';
+import 'package:my_app/model/post.dart';
 import 'package:my_app/widgets/post_item.dart';
 import 'package:provider/provider.dart';
 
@@ -66,11 +66,7 @@ class _PostsTabState extends State<PostsTab> {
         String? mediaUrl;
 
         if (fileIds.isNotEmpty) {
-          if (postType == PostType.image) {
             mediaUrl = _appwriteService.getFileViewUrl(fileIds.first);
-          } else if (postType == PostType.video) {
-            mediaUrl = _appwriteService.getFileThumbnailUrl(fileIds.first);
-          }
         }
 
         return Post(

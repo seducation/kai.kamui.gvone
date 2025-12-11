@@ -12,7 +12,7 @@ import 'package:my_app/tabs/podcasts_tab.dart';
 import 'package:my_app/tabs/posts_tab.dart';
 import 'package:my_app/tabs/products_tab.dart';
 import 'package:my_app/tabs/shorts_tab.dart';
-import 'package:my_app/tabs/videos_tab.dart';
+import 'package:my_app/tabs/video_tab.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 

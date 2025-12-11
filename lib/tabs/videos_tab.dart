@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 class VideosTab extends StatelessWidget {
-  const VideosTab({super.key});
+  final String profileId;
+  const VideosTab({super.key, required this.profileId});
 
   @override
   Widget build(BuildContext context) {
