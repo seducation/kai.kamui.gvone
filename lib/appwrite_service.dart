@@ -75,6 +75,8 @@ class AppwriteService {
     required String name,
     required String type,
     required String bio,
+    required String handle,
+    required String location,
     required String profileImageUrl,
     required String bannerImageUrl,
   }) async {
@@ -93,6 +95,8 @@ class AppwriteService {
         'name': name,
         'type': type,
         'bio': bio,
+        'handle': handle,
+        'location': location,
         'profileImageUrl': profileImageUrl,
         'bannerImageUrl': bannerImageUrl,
         'followers': [],
