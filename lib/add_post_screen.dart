@@ -142,6 +142,10 @@ class _AddPostScreenState extends State<AddPostScreen> {
         'profile_id': _selectedProfileId,
       };
 
+      if (_allowUserEditing && _selectedProfileId != null) {
+        postData['authoreid'] = [_selectedProfileId];
+      }
+
       // Show the WhereToPostScreen as a modal bottom sheet
       if (mounted) {
         showModalBottomSheet(
@@ -434,11 +438,13 @@ class _AddPostScreenState extends State<AddPostScreen> {
         ),
         const SizedBox(height: 16),
         DropdownButtonFormField<String>(
+          // Using `value` instead of `initialValue` to ensure it rebuilds correctly
           initialValue: _selectedProfileId,
           decoration: const InputDecoration(
             labelText: 'Overall Profile ID',
             border: OutlineInputBorder(),
           ),
+          // This is the crucial part: enable/disable based on the switch
           onChanged: _allowUserEditing
               ? (String? newValue) {
                   setState(() {
@@ -457,6 +463,7 @@ class _AddPostScreenState extends State<AddPostScreen> {
         ),
         const SizedBox(height: 16),
         TextField(
+          // This text field is also controlled by the same switch
           enabled: _allowUserEditing,
           decoration: const InputDecoration(
             labelText: 'Add Collaboration',
