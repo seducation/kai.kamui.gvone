@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:my_app/appwrite_service.dart';
 import 'package:my_app/chat_screen.dart';
 import 'package:my_app/environment.dart';
+import 'package:my_app/profile_page.dart';
 import 'package:my_app/results_searches.dart';
 import 'package:my_app/where_to_post.dart';
 import 'package:provider/provider.dart';
@@ -125,6 +126,10 @@ GoRouter _createRouter(AuthService authService) {
        GoRoute(
         path: '/profile/:id',
         builder: (context, state) => ProfileScreen(key: state.pageKey, userId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/profile_page/:id',
+        builder: (context, state) => ProfilePageScreen(key: state.pageKey, profileId: state.pathParameters['id']!),
       ),
        GoRoute(
         path: '/settings',

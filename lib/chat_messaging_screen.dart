@@ -140,9 +140,7 @@ class _ChatMessagingScreenState extends State<ChatMessagingScreen> {
           );
         },
         onProfileTap: () {
-          final name = Uri.encodeComponent(widget.chat.name);
-          final imageUrl = Uri.encodeComponent(widget.chat.imgPath);
-          context.go('/profile_page?name=$name&imageUrl=$imageUrl');
+          context.push('/profile_page/${widget.chat.userId}');
         },
       ),
       body: Container(

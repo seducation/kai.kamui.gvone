@@ -195,7 +195,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             title: Text(profile.data['name'] ?? 'No Name'),
                             subtitle: Text(profile.data['type'] ?? 'No Type'),
                             onTap: () {
-                              context.go('/profile/${profile.$id}');
+                              context.push('/profile_page/${profile.$id}');
                             },
                           );
                         },
