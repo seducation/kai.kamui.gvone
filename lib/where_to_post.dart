@@ -94,12 +94,32 @@ class _WhereToPostScreenState extends State<WhereToPostScreen> {
       return;
     }
 
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final appwriteService = context.read<AppwriteService>();
+    final router = GoRouter.of(context);
+
+    final userProfiles = await _profilesFuture;
+
+    if (!mounted) return;
+
+    final allProfiles = [...userProfiles, ..._followingProfiles];
+    
+    for (final profileId in _selectedProfileIds) {
+      final profile = allProfiles.firstWhere((p) => p.id == profileId);
+      if (profile.type == 'thread') {
+        if (!widget.postData.containsKey('authoreid') || (widget.postData['authoreid'] as List).isEmpty) {
+          scaffoldMessenger.showSnackBar(
+            const SnackBar(content: Text('You must allow sharing your author ID to post to a thread.')),
+          );
+          return;
+        }
+      }
+    }
+
     setState(() {
       _isPublishing = true;
     });
 
-    final appwriteService = context.read<AppwriteService>();
-    
     try {
       final postFutures = _selectedProfileIds.map((profileId) {
         final postData = {
@@ -112,14 +132,14 @@ class _WhereToPostScreenState extends State<WhereToPostScreen> {
       await Future.wait(postFutures);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        scaffoldMessenger.showSnackBar(
           SnackBar(content: Text('Successfully posted to ${_selectedProfileIds.length} account(s).')),
         );
-        context.go('/');
+        router.go('/');
       }
     } on AppwriteException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        scaffoldMessenger.showSnackBar(
           SnackBar(content: Text('Failed to create one or more posts: ${e.message}')),
         );
       }
