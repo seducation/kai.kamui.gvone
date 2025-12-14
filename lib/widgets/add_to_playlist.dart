@@ -18,7 +18,7 @@ class _AddToPlaylistScreenState extends State<AddToPlaylistScreen> {
   late AppwriteService _appwriteService;
   final _formKey = GlobalKey<FormState>();
   String _playlistName = '';
-  bool _isCollaborative = false;
+  bool _isPrivate = true;
 
   Future<models.RowList>? _playlistsFuture;
 
@@ -41,7 +41,7 @@ class _AddToPlaylistScreenState extends State<AddToPlaylistScreen> {
       try {
         await _appwriteService.createPlaylist(
           name: _playlistName,
-          isCollaborative: _isCollaborative,
+          isPrivate: _isPrivate,
           profileId: widget.profileId,
           postId: widget.postId,
         );
@@ -142,11 +142,14 @@ class _AddToPlaylistScreenState extends State<AddToPlaylistScreen> {
                     final postIds = List<String>.from(playlist.data['post_ids'] ?? []);
                     final isChecked = postIds.contains(widget.postId);
                     final title = playlist.data['name']?.toString() ?? 'Untitled Playlist';
+                    final isPrivate = playlist.data['isPrivate'] ?? true;
+
                     
                     return _buildPlaylistItem(
                       title: title,
                       subtitle: "${postIds.length} posts",
                       isChecked: isChecked,
+                      isPrivate: isPrivate,
                       onTap: (value) {
                         if (value == true) {
                           _addPostToExistingPlaylist(playlist.$id);
@@ -190,7 +193,7 @@ class _AddToPlaylistScreenState extends State<AddToPlaylistScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) {
-        bool isDialogCollaborative = false; 
+        bool isDialogPrivate = true; 
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
@@ -213,12 +216,12 @@ class _AddToPlaylistScreenState extends State<AddToPlaylistScreen> {
                       },
                     ),
                     CheckboxListTile(
-                      title: const Text('Collaborative'),
-                      value: isDialogCollaborative,
+                      title: const Text('Private'),
+                      value: isDialogPrivate,
                       onChanged: (value) {
                         setDialogState(() {
-                           isDialogCollaborative = value!;
-                           _isCollaborative = value;
+                           isDialogPrivate = value!;
+                           _isPrivate = value;
                         });
                       },
                     ),
@@ -255,7 +258,7 @@ class _AddToPlaylistScreenState extends State<AddToPlaylistScreen> {
     required String subtitle,
     required bool isChecked,
     required ValueChanged<bool?> onTap,
-    bool isPrivate = true,
+    required bool isPrivate,
   }) {
     final theme = Theme.of(context);
     return CheckboxListTile(

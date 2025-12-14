@@ -577,7 +577,7 @@ class AppwriteService {
 
   Future<void> createPlaylist({
     required String name,
-    required bool isCollaborative,
+    required bool isPrivate,
     required String profileId,
     required String postId,
   }) async {
@@ -594,9 +594,9 @@ class AppwriteService {
       rowId: ID.unique(),
       data: {
         'name': name,
-        'isCollaborative': isCollaborative,
+        'isPrivate': isPrivate,
         'profile_id': profileId,
-        'post_ids': [postId], // Use the new 'post_ids' array
+        'post_ids': [postId],
       },
       permissions: [
         Permission.read(Role.any()),
@@ -635,7 +635,7 @@ class AppwriteService {
         tableId: playlistsCollection,
         rowId: playlistId,
         data: {
-          'post_ids': postIds, // Use 'post_ids' array
+          'post_ids': postIds,
         },
       );
     }
