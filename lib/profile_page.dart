@@ -8,7 +8,7 @@ import 'package:my_app/model/profile.dart';
 import 'package:my_app/tabs/about_tab.dart';
 import 'package:my_app/tabs/home_tab.dart';
 import 'package:my_app/tabs/live_tab.dart';
-import 'package:my_app/tabs/podcasts_tab.dart';
+import 'package:my_app/tabs/playlists_tab.dart';
 import 'package:my_app/tabs/posts_tab.dart';
 import 'package:my_app/tabs/products_tab.dart';
 import 'package:my_app/tabs/shorts_tab.dart';
@@ -126,7 +126,7 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
       "Videos",
       "Shorts",
       "Live",
-      "Podcasts",
+      "Playlists",
     ];
     if (profile?.type == 'business') {
       baseTabs.add("Products");
@@ -390,7 +390,7 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
       VideosTab(profileId: widget.profileId),
       ShortsTab(profileId: widget.profileId),
       LiveTab(profileId: widget.profileId),
-      PodcastsTab(profileId: widget.profileId),
+      PlaylistsTab(profileId: widget.profileId),
     ];
     if (profile != null && profile.type == 'business') {
       baseTabViews.add(ProductsTab(profileId: widget.profileId));
