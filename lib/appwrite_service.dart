@@ -3,6 +3,8 @@ import 'package:appwrite/appwrite.dart';
 import 'package:appwrite/models.dart' as models;
 import 'package:my_app/environment.dart';
 import 'community_screen_widget/poster_item.dart';
+import 'package:my_app/model/post.dart';
+import 'package:my_app/model/profile.dart';
 
 class AppwriteService {
   final Client _client;
@@ -638,6 +640,58 @@ class AppwriteService {
           'post_ids': postIds,
         },
       );
+    }
+  }
+
+  Future<List<Post>> getPostsFromPlaylist(String playlistId) async {
+    try {
+      final playlist = await _db.getRow(
+        databaseId: Environment.appwriteDatabaseId,
+        tableId: playlistsCollection,
+        rowId: playlistId,
+      );
+
+      final List<String> postIds = List<String>.from(playlist.data['post_ids'] ?? []);
+
+      if (postIds.isEmpty) {
+        return [];
+      }
+
+      final postsData = await _db.listRows(
+        databaseId: Environment.appwriteDatabaseId,
+        tableId: postsCollection,
+        queries: [
+          Query.equal('\$id', postIds),
+        ],
+      );
+
+      final posts = <Post>[];
+      for (final postRow in postsData.rows) {
+        final profile = await getProfile(postRow.data['profile_id']);
+        final author = Profile.fromRow(profile);
+
+        final post = Post(
+            id: postRow.$id,
+            author: author,
+            timestamp: DateTime.parse(postRow.data['timestamp']),
+            contentText: postRow.data['contentText'],
+            stats: PostStats(
+              likes: postRow.data['likes'] ?? 0,
+              comments: postRow.data['comments'] ?? 0,
+              shares: postRow.data['shares'] ?? 0,
+              views: postRow.data['views'] ?? 0,
+            ),
+            mediaUrl: postRow.data['mediaUrl'],
+            linkUrl: postRow.data['linkUrl'],
+            linkTitle: postRow.data['linkTitle'],
+            type: PostType.values.firstWhere(
+                (e) => e.toString() == 'PostType.${postRow.data['type']}',
+                orElse: () => PostType.text));
+        posts.add(post);
+      }
+      return posts;
+    } catch (e) {
+      return [];
     }
   }
 }
