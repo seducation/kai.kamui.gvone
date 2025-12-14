@@ -596,7 +596,8 @@ class AppwriteService {
         'name': name,
         'isCollaborative': isCollaborative,
         'profile_id': profileId,
-        'post_id': [postId], // Initialize with the first post
+        'post_id': postId, // Satisfy the required attribute
+        'post_ids': [postId], // Also use the new 'post_ids' array
       },
       permissions: [
         Permission.read(Role.any()),
@@ -626,7 +627,7 @@ class AppwriteService {
       rowId: playlistId,
     );
 
-    final List<dynamic> postIds = List<dynamic>.from(playlist.data['post_id'] ?? []);
+    final List<dynamic> postIds = List<dynamic>.from(playlist.data['post_ids'] ?? []);
     
     if (!postIds.contains(postId)) {
       postIds.add(postId);
@@ -635,7 +636,7 @@ class AppwriteService {
         tableId: playlistsCollection,
         rowId: playlistId,
         data: {
-          'post_id': postIds,
+          'post_ids': postIds, // Use 'post_ids' array
         },
       );
     }

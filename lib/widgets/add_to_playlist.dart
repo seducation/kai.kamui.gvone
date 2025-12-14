@@ -1,4 +1,5 @@
 import 'package:appwrite/models.dart' as models;
+
 import 'package:flutter/material.dart';
 import 'package:my_app/appwrite_service.dart';
 import 'package:provider/provider.dart';
@@ -116,7 +117,6 @@ class _AddToPlaylistScreenState extends State<AddToPlaylistScreen> {
           ),
           const SizedBox(height: 10),
           
-          // This part will now be a list of playlists
           Flexible(
             child: FutureBuilder<models.RowList>(
               future: _playlistsFuture,
@@ -137,13 +137,15 @@ class _AddToPlaylistScreenState extends State<AddToPlaylistScreen> {
                   itemCount: playlists.length,
                   itemBuilder: (context, index) {
                     final playlist = playlists[index];
-                    final postIds = List<String>.from(playlist.data['post_id'] ?? []);
+                    
+                    // Correctly read from the 'post_ids' array field
+                    final postIds = List<String>.from(playlist.data['post_ids'] ?? []);
                     final isChecked = postIds.contains(widget.postId);
-                    final title = playlist.data['name'] as String? ?? 'Untitled Playlist';
+                    final title = playlist.data['name']?.toString() ?? 'Untitled Playlist';
                     
                     return _buildPlaylistItem(
                       title: title,
-                      subtitle: "${postIds.length} posts", // Show post count
+                      subtitle: "${postIds.length} posts",
                       isChecked: isChecked,
                       onTap: (value) {
                         if (value == true) {
@@ -185,11 +187,9 @@ class _AddToPlaylistScreenState extends State<AddToPlaylistScreen> {
   }
 
   void _showCreatePlaylistDialog() {
-    // This part remains mostly the same, but we need to ensure it re-fetches playlists on completion
     showDialog(
       context: context,
       builder: (dialogContext) {
-        // Use a local state for the checkbox inside the dialog
         bool isDialogCollaborative = false; 
         return StatefulBuilder(
           builder: (context, setDialogState) {
@@ -218,7 +218,7 @@ class _AddToPlaylistScreenState extends State<AddToPlaylistScreen> {
                       onChanged: (value) {
                         setDialogState(() {
                            isDialogCollaborative = value!;
-                           _isCollaborative = value; // also update the outer state
+                           _isCollaborative = value;
                         });
                       },
                     ),
@@ -236,8 +236,8 @@ class _AddToPlaylistScreenState extends State<AddToPlaylistScreen> {
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
                       _formKey.currentState!.save();
-                      Navigator.pop(dialogContext); // Close dialog first
-                      _createPlaylist(); // Then create playlist, which will pop the sheet
+                      Navigator.pop(dialogContext);
+                      _createPlaylist();
                     }
                   },
                   child: const Text('Create'),
@@ -247,16 +247,15 @@ class _AddToPlaylistScreenState extends State<AddToPlaylistScreen> {
           }
         );
       },
-    ).then((_) => _fetchPlaylists()); // After the dialog closes, refresh the list
+    ).then((_) => _fetchPlaylists());
   }
   
-  // Update the helper widget to be more generic
   Widget _buildPlaylistItem({
     required String title,
     required String subtitle,
     required bool isChecked,
     required ValueChanged<bool?> onTap,
-    bool isPrivate = true, // Assuming playlists are private by default
+    bool isPrivate = true,
   }) {
     final theme = Theme.of(context);
     return CheckboxListTile(
