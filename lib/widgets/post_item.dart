@@ -9,8 +9,9 @@ import 'package:video_player/video_player.dart';
 
 class PostItem extends StatefulWidget {
   final Post post;
+  final String profileId;
 
-  const PostItem({super.key, required this.post});
+  const PostItem({super.key, required this.post, required this.profileId});
 
   @override
   State<PostItem> createState() => _PostItemState();
@@ -165,7 +166,10 @@ class _PostItemState extends State<PostItem> {
                   shape: const RoundedRectangleBorder(
                     borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                   ),
-                  builder: (context) => const SaveToBottomSheet(),
+                  builder: (context) => AddToPlaylistScreen(
+                    postId: widget.post.id,
+                    profileId: widget.profileId,
+                  ),
                 );
               }
             },

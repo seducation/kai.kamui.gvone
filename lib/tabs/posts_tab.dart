@@ -131,7 +131,7 @@ class _PostsTabState extends State<PostsTab> {
                 itemCount: _posts.length,
                 itemBuilder: (context, index) {
                   final post = _posts[index];
-                  return PostItem(post: post);
+                  return PostItem(post: post, profileId: widget.profileId);
                 },
               );
   }

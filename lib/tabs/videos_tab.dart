@@ -130,7 +130,7 @@ class _VideosTabState extends State<VideosTab> {
                         // Autoplay logic can be implemented here
                       }
                     },
-                    child: PostItem(post: post),
+                    child: PostItem(post: post, profileId: widget.profileId),
                   );
                 },
               );

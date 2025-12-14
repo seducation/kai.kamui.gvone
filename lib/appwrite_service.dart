@@ -18,6 +18,7 @@ class AppwriteService {
   static const String imagesCollection = "images";
   static const String commentsCollection = "comments";
   static const String productsCollection = "products";
+  static const String playlistsCollection = "playlists";
 
   AppwriteService(this._client) {
     _db = TablesDB(_client);
@@ -572,5 +573,71 @@ class AppwriteService {
         Query.equal('profile_id', profileId),
       ],
     );
+  }
+
+  Future<void> createPlaylist({
+    required String name,
+    required bool isCollaborative,
+    required String profileId,
+    required String postId,
+  }) async {
+    final profile = await getProfile(profileId);
+    final ownerId = profile.data['ownerId'];
+
+    if (ownerId == null) {
+      throw AppwriteException('Could not determine the owner of the profile for this playlist.', 403);
+    }
+
+    await _db.createRow(
+      databaseId: Environment.appwriteDatabaseId,
+      tableId: playlistsCollection,
+      rowId: ID.unique(),
+      data: {
+        'name': name,
+        'isCollaborative': isCollaborative,
+        'profile_id': profileId,
+        'post_id': [postId], // Initialize with the first post
+      },
+      permissions: [
+        Permission.read(Role.any()),
+        Permission.update(Role.user(ownerId)),
+        Permission.delete(Role.user(ownerId)),
+      ],
+    );
+  }
+
+  Future<models.RowList> getPlaylists(String profileId) async {
+    return _db.listRows(
+      databaseId: Environment.appwriteDatabaseId,
+      tableId: playlistsCollection,
+      queries: [
+        Query.equal('profile_id', profileId),
+      ],
+    );
+  }
+
+  Future<void> addPostToPlaylist({
+    required String playlistId,
+    required String postId,
+  }) async {
+    final playlist = await _db.getRow(
+      databaseId: Environment.appwriteDatabaseId,
+      tableId: playlistsCollection,
+      rowId: playlistId,
+    );
+
+    final List<dynamic> postIds = List<dynamic>.from(playlist.data['post_id'] ?? []);
+    
+    if (!postIds.contains(postId)) {
+      postIds.add(postId);
+      await _db.updateRow(
+        databaseId: Environment.appwriteDatabaseId,
+        tableId: playlistsCollection,
+        rowId: playlistId,
+        data: {
+          'post_id': postIds,
+        },
+      );
+    }
   }
 }

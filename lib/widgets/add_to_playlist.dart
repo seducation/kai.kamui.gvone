@@ -1,15 +1,82 @@
+import 'package:appwrite/models.dart' as models;
 import 'package:flutter/material.dart';
+import 'package:my_app/appwrite_service.dart';
+import 'package:provider/provider.dart';
 
-class SaveToBottomSheet extends StatefulWidget {
-  const SaveToBottomSheet({super.key});
+class AddToPlaylistScreen extends StatefulWidget {
+  final String postId;
+  final String profileId;
+
+  const AddToPlaylistScreen({super.key, required this.postId, required this.profileId});
 
   @override
-  State<SaveToBottomSheet> createState() => _SaveToBottomSheetState();
+  State<AddToPlaylistScreen> createState() => _AddToPlaylistScreenState();
 }
 
-class _SaveToBottomSheetState extends State<SaveToBottomSheet> {
-  // State to track if playlists are checked
-  bool isWatchLaterSelected = false;
+class _AddToPlaylistScreenState extends State<AddToPlaylistScreen> {
+  late AppwriteService _appwriteService;
+  final _formKey = GlobalKey<FormState>();
+  String _playlistName = '';
+  bool _isCollaborative = false;
+
+  Future<models.RowList>? _playlistsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _appwriteService = context.read<AppwriteService>();
+    _fetchPlaylists();
+  }
+
+  void _fetchPlaylists() {
+    setState(() {
+      _playlistsFuture = _appwriteService.getPlaylists(widget.profileId);
+    });
+  }
+
+  void _createPlaylist() async {
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
+      try {
+        await _appwriteService.createPlaylist(
+          name: _playlistName,
+          isCollaborative: _isCollaborative,
+          profileId: widget.profileId,
+          postId: widget.postId,
+        );
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Playlist created and post added!')),
+        );
+        Navigator.pop(context); // Close the main bottom sheet
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to create playlist: $e')),
+        );
+      }
+    }
+  }
+
+  void _addPostToExistingPlaylist(String playlistId) async {
+    try {
+      await _appwriteService.addPostToPlaylist(
+        playlistId: playlistId,
+        postId: widget.postId,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Added to playlist!')),
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to add to playlist: $e')),
+      );
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -17,10 +84,9 @@ class _SaveToBottomSheetState extends State<SaveToBottomSheet> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20.0),
       child: Column(
-        mainAxisSize: MainAxisSize.min, // Hug the content height
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Drag Handle (The small grey bar at the top)
           Center(
             child: Container(
               margin: const EdgeInsets.symmetric(vertical: 12),
@@ -32,8 +98,6 @@ class _SaveToBottomSheetState extends State<SaveToBottomSheet> {
               ),
             ),
           ),
-
-          // 2. Title "Save to..."
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: Row(
@@ -43,7 +107,6 @@ class _SaveToBottomSheetState extends State<SaveToBottomSheet> {
                   "Save to...",
                   style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
                 ),
-                // Optional: Close button usually found on the right (not circled but UX best practice)
                 IconButton(
                   icon: const Icon(Icons.close),
                   onPressed: () => Navigator.pop(context),
@@ -51,45 +114,56 @@ class _SaveToBottomSheetState extends State<SaveToBottomSheet> {
               ],
             ),
           ),
-
           const SizedBox(height: 10),
+          
+          // This part will now be a list of playlists
+          Flexible(
+            child: FutureBuilder<models.RowList>(
+              future: _playlistsFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(child: Text("Error: ${snapshot.error}"));
+                }
+                if (!snapshot.hasData || snapshot.data!.rows.isEmpty) {
+                  return const Center(child: Text("No playlists found."));
+                }
 
-          // 3. The "Watch later" List Item
-          _buildPlaylistItem(
-            title: "Watch later",
-            subtitle: "Private",
-            isChecked: isWatchLaterSelected,
-            hasThumbnail: true, 
-            onTap: (value) {
-              setState(() {
-                isWatchLaterSelected = value ?? false;
-              });
-              
-              // Optional: Show a snackbar when saved
-              if (isWatchLaterSelected) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Saved to Watch later"),
-                    duration: Duration(seconds: 1),
-                  ),
+                final playlists = snapshot.data!.rows;
+                return ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: playlists.length,
+                  itemBuilder: (context, index) {
+                    final playlist = playlists[index];
+                    final postIds = List<String>.from(playlist.data['post_id'] ?? []);
+                    final isChecked = postIds.contains(widget.postId);
+                    final title = playlist.data['name'] as String? ?? 'Untitled Playlist';
+                    
+                    return _buildPlaylistItem(
+                      title: title,
+                      subtitle: "${postIds.length} posts", // Show post count
+                      isChecked: isChecked,
+                      onTap: (value) {
+                        if (value == true) {
+                          _addPostToExistingPlaylist(playlist.$id);
+                        }
+                      },
+                    );
+                  },
                 );
-              }
-            },
+              },
+            ),
           ),
 
-          // Divider similar to standard UI lists
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.0),
             child: Divider(),
           ),
-
-          // 4. "+ New playlist" Button
           InkWell(
             onTap: () {
-              // Action for new playlist
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Create new playlist clicked")),
-              );
+              _showCreatePlaylistDialog();
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
@@ -110,43 +184,102 @@ class _SaveToBottomSheetState extends State<SaveToBottomSheet> {
     );
   }
 
-  // Helper widget to build the playlist rows
+  void _showCreatePlaylistDialog() {
+    // This part remains mostly the same, but we need to ensure it re-fetches playlists on completion
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        // Use a local state for the checkbox inside the dialog
+        bool isDialogCollaborative = false; 
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('New Playlist'),
+              content: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      decoration: const InputDecoration(labelText: 'Playlist Name'),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter a playlist name';
+                        }
+                        return null;
+                      },
+                      onSaved: (value) {
+                        _playlistName = value!;
+                      },
+                    ),
+                    CheckboxListTile(
+                      title: const Text('Collaborative'),
+                      value: isDialogCollaborative,
+                      onChanged: (value) {
+                        setDialogState(() {
+                           isDialogCollaborative = value!;
+                           _isCollaborative = value; // also update the outer state
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(dialogContext);
+                  },
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      _formKey.currentState!.save();
+                      Navigator.pop(dialogContext); // Close dialog first
+                      _createPlaylist(); // Then create playlist, which will pop the sheet
+                    }
+                  },
+                  child: const Text('Create'),
+                ),
+              ],
+            );
+          }
+        );
+      },
+    ).then((_) => _fetchPlaylists()); // After the dialog closes, refresh the list
+  }
+  
+  // Update the helper widget to be more generic
   Widget _buildPlaylistItem({
     required String title,
     required String subtitle,
     required bool isChecked,
     required ValueChanged<bool?> onTap,
-    bool hasThumbnail = false,
+    bool isPrivate = true, // Assuming playlists are private by default
   }) {
     final theme = Theme.of(context);
     return CheckboxListTile(
       value: isChecked,
       onChanged: onTap,
-      activeColor: Colors.blueAccent, // Color of the checkbox when ticked
+      activeColor: Colors.blueAccent,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
-      controlAffinity: ListTileControlAffinity.trailing, // Checkbox on the right
-      
-      // Custom Layout for the "Secondary" (Leading) widget
-      // We use a Row here to combine the thumbnail and text on the left side
+      controlAffinity: ListTileControlAffinity.trailing,
       title: Row(
         children: [
-          // The Thumbnail (Purple/Dark box from screenshot)
-          if (hasThumbnail)
-            Container(
-              width: 50,
-              height: 30,
-              margin: const EdgeInsets.only(right: 16),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: theme.dividerColor),
-              ),
-              child: Center(
-                child: Icon(Icons.access_time, size: 16, color: theme.colorScheme.onSurfaceVariant),
-              ),
+          Container(
+            width: 50,
+            height: 30,
+            margin: const EdgeInsets.only(right: 16),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: theme.dividerColor),
             ),
-          
-          // The Text Column
+            child: Center(
+              child: Icon(Icons.playlist_play, size: 16, color: theme.colorScheme.onSurfaceVariant),
+            ),
+          ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -157,8 +290,10 @@ class _SaveToBottomSheetState extends State<SaveToBottomSheet> {
               const SizedBox(height: 2),
               Row(
                 children: [
-                  Icon(Icons.lock, size: 12, color: theme.disabledColor),
-                  const SizedBox(width: 4),
+                  if (isPrivate) ...[
+                    Icon(Icons.lock, size: 12, color: theme.disabledColor),
+                    const SizedBox(width: 4),
+                  ],
                   Text(
                     subtitle,
                     style: TextStyle(
