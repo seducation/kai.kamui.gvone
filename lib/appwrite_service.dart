@@ -657,37 +657,39 @@ class AppwriteService {
         return [];
       }
 
-      final postsData = await _db.listRows(
-        databaseId: Environment.appwriteDatabaseId,
-        tableId: postsCollection,
-        queries: [
-          Query.equal('\$id', postIds),
-        ],
-      );
-
       final posts = <Post>[];
-      for (final postRow in postsData.rows) {
-        final profile = await getProfile(postRow.data['profile_id']);
-        final author = Profile.fromRow(profile);
+      for (final postId in postIds) {
+        try {
+          final postRow = await _db.getRow(
+            databaseId: Environment.appwriteDatabaseId,
+            tableId: postsCollection,
+            rowId: postId,
+          );
 
-        final post = Post(
-            id: postRow.$id,
-            author: author,
-            timestamp: DateTime.parse(postRow.data['timestamp']),
-            contentText: postRow.data['contentText'],
-            stats: PostStats(
-              likes: postRow.data['likes'] ?? 0,
-              comments: postRow.data['comments'] ?? 0,
-              shares: postRow.data['shares'] ?? 0,
-              views: postRow.data['views'] ?? 0,
-            ),
-            mediaUrl: postRow.data['mediaUrl'],
-            linkUrl: postRow.data['linkUrl'],
-            linkTitle: postRow.data['linkTitle'],
-            type: PostType.values.firstWhere(
-                (e) => e.toString() == 'PostType.${postRow.data['type']}',
-                orElse: () => PostType.text));
-        posts.add(post);
+          final profile = await getProfile(postRow.data['profile_id']);
+          final author = Profile.fromRow(profile);
+
+          final post = Post(
+              id: postRow.$id,
+              author: author,
+              timestamp: postRow.data['timestamp'] != null ? DateTime.parse(postRow.data['timestamp']) : DateTime.now(),
+              contentText: postRow.data['contentText'] ?? '',
+              stats: PostStats(
+                likes: postRow.data['likes'] ?? 0,
+                comments: postRow.data['comments'] ?? 0,
+                shares: postRow.data['shares'] ?? 0,
+                views: postRow.data['views'] ?? 0,
+              ),
+              mediaUrl: postRow.data['mediaUrl'],
+              linkUrl: postRow.data['linkUrl'],
+              linkTitle: postRow.data['linkTitle'],
+              type: PostType.values.firstWhere(
+                  (e) => e.toString() == 'PostType.${postRow.data['type']}',
+                  orElse: () => PostType.text));
+          posts.add(post);
+        } catch (e) {
+          // If a single post fails, just continue
+        }
       }
       return posts;
     } catch (e) {
