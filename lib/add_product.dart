@@ -3,11 +3,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:my_app/appwrite_service.dart';
+import 'package:my_app/models/product.dart';
 import 'package:provider/provider.dart';
 
 class AddProductScreen extends StatefulWidget {
   final String profileId;
-  const AddProductScreen({super.key, required this.profileId});
+  final Product? product;
+
+  const AddProductScreen({super.key, required this.profileId, this.product});
 
   @override
   State<AddProductScreen> createState() => _AddProductScreenState();
@@ -15,11 +18,30 @@ class AddProductScreen extends StatefulWidget {
 
 class _AddProductScreenState extends State<AddProductScreen> {
   final _formKey = GlobalKey<FormState>();
-  String _productName = '';
-  String _productDescription = '';
-  double _productPrice = 0.0;
-  String _productLocation = '';
+  late String _productName;
+  late String _productDescription;
+  late double _productPrice;
+  late String _productLocation;
   File? _productImage;
+  String? _imageUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.product != null) {
+      _productName = widget.product!.name;
+      _productDescription = widget.product!.description;
+      _productPrice = widget.product!.price;
+      _productLocation = widget.product!.location;
+      _imageUrl = widget.product!.imageId;
+    } else {
+      _productName = '';
+      _productDescription = '';
+      _productPrice = 0.0;
+      _productLocation = '';
+      _imageUrl = null;
+    }
+  }
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
@@ -28,11 +50,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
     if (pickedFile != null) {
       setState(() {
         _productImage = File(pickedFile.path);
+        _imageUrl = null;
       });
     }
   }
 
-  void _addProduct() async {
+  void _submitProduct() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
@@ -41,29 +64,53 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
       try {
         final appwriteService = context.read<AppwriteService>();
+        String? imageId = widget.product?.imageId;
 
-        // Note: You'll need to handle the image upload to Appwrite Storage
-        // and get the file ID to store in the product document.
-        // This part is not fully implemented here.
+        if (_productImage != null) {
+          final file = await appwriteService.uploadFile(
+            bytes: await _productImage!.readAsBytes(),
+            filename: _productImage!.path.split('/').last,
+          );
+          imageId = file.$id;
+        }
 
-        await appwriteService.createProduct(
-          name: _productName,
-          description: _productDescription,
-          price: _productPrice,
-          profileId: widget.profileId, // Use the correct profileId from the widget
-          location: _productLocation,
-          // You would pass the image file ID here
-        );
+        if (widget.product != null) {
+          await appwriteService.updateProduct(
+            productId: widget.product!.id,
+            data: {
+              'name': _productName,
+              'description': _productDescription,
+              'price': _productPrice,
+              'location': _productLocation,
+              if (imageId != null) 'imageId': imageId,
+            },
+          );
+        } else {
+          await appwriteService.createProduct(
+            name: _productName,
+            description: _productDescription,
+            price: _productPrice,
+            profileId: widget.profileId,
+            location: _productLocation,
+            imageId: imageId,
+          );
+        }
 
         if (!mounted) return;
         scaffoldMessenger.showSnackBar(
-          const SnackBar(content: Text('Product added successfully!')),
+          SnackBar(
+            content: Text(
+              widget.product != null
+                  ? 'Product updated successfully!'
+                  : 'Product added successfully!',
+            ),
+          ),
         );
         navigator.pop();
       } catch (e) {
         if (!mounted) return;
         scaffoldMessenger.showSnackBar(
-          SnackBar(content: Text('Failed to add product: $e')),
+          SnackBar(content: Text('Failed to submit product: $e')),
         );
       }
     }
@@ -71,9 +118,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final appwriteService = context.read<AppwriteService>();
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Product'),
+        title: Text(widget.product != null ? 'Edit Product' : 'Add Product'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -89,6 +137,18 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     decoration: BoxDecoration(
                       image: DecorationImage(
                         image: FileImage(_productImage!),
+                        fit: BoxFit.cover,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  )
+                else if (_imageUrl != null)
+                  Container(
+                    height: 200,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: NetworkImage(appwriteService.getFileViewUrl(_imageUrl!)),
                         fit: BoxFit.cover,
                       ),
                       borderRadius: BorderRadius.circular(12),
@@ -111,19 +171,21 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   ),
                 const SizedBox(height: 20),
                 TextFormField(
+                  initialValue: _productName,
                   decoration: const InputDecoration(labelText: 'Product Name'),
                   validator: (value) =>
                       value!.isEmpty ? 'Please enter a product name' : null,
                   onSaved: (value) => _productName = value ?? '',
                 ),
                 TextFormField(
-                  decoration:
-                      const InputDecoration(labelText: 'Product Description'),
+                  initialValue: _productDescription,
+                  decoration: const InputDecoration(labelText: 'Product Description'),
                   validator: (value) =>
                       value!.isEmpty ? 'Please enter a product description' : null,
                   onSaved: (value) => _productDescription = value ?? '',
                 ),
                 TextFormField(
+                  initialValue: _productPrice.toString(),
                   decoration: const InputDecoration(labelText: 'Price'),
                   keyboardType: TextInputType.number,
                   validator: (value) =>
@@ -132,6 +194,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       _productPrice = double.tryParse(value ?? '') ?? 0.0,
                 ),
                 TextFormField(
+                  initialValue: _productLocation,
                   decoration: const InputDecoration(labelText: 'Location'),
                   validator: (value) =>
                       value!.isEmpty ? 'Please enter a location' : null,
@@ -139,8 +202,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: _addProduct,
-                  child: const Text('Add Product'),
+                  onPressed: _submitProduct,
+                  child: Text(widget.product != null ? 'Update Product' : 'Add Product'),
                 ),
               ],
             ),

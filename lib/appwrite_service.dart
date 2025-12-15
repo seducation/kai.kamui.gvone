@@ -592,6 +592,26 @@ class AppwriteService {
     );
   }
 
+  Future<void> updateProduct({
+    required String productId,
+    required Map<String, dynamic> data,
+  }) async {
+    await _db.updateRow(
+      databaseId: Environment.appwriteDatabaseId,
+      tableId: productsCollection,
+      rowId: productId,
+      data: data,
+    );
+  }
+
+  Future<void> deleteProduct(String productId) async {
+    await _db.deleteRow(
+      databaseId: Environment.appwriteDatabaseId,
+      tableId: productsCollection,
+      rowId: productId,
+    );
+  }
+
   Future<void> createPlaylist({
     required String name,
     required bool isPrivate,

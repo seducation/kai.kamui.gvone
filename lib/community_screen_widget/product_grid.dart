@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/appwrite_service.dart';
 import 'package:my_app/models/product.dart';
+import 'package:my_app/product_detailed_page.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -98,7 +99,17 @@ class _ProductGridState extends State<ProductGrid> {
             crossAxisSpacing: 10.0,
           ),
           itemBuilder: (context, index) {
-            return ProductCard(product: products[index]);
+            return GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProductDetailPage(product: products[index]),
+                  ),
+                );
+              },
+              child: ProductCard(product: products[index]),
+            );
           },
         );
       },
