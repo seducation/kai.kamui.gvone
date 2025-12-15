@@ -21,6 +21,7 @@ class AppwriteService {
   static const String commentsCollection = "comments";
   static const String productsCollection = "products";
   static const String playlistsCollection = "playlists";
+  static const String storiesCollection = "stories";
 
   AppwriteService(this._client) {
     _db = TablesDB(_client);
@@ -730,5 +731,47 @@ class AppwriteService {
     } catch (e) {
       return [];
     }
+  }
+
+  Future<void> createStory({
+    required String profileId,
+    required String mediaUrl,
+    required String mediaType,
+    String? caption,
+  }) async {
+    final user = await getUser();
+    if (user == null) {
+      throw AppwriteException('User not authenticated', 401);
+    }
+    final ownerId = user.$id;
+
+    await _db.createRow(
+      databaseId: Environment.appwriteDatabaseId,
+      tableId: storiesCollection,
+      rowId: ID.unique(),
+      data: {
+        'profileId': profileId,
+        'mediaUrl': mediaUrl,
+        'mediaType': mediaType,
+        'expiresAt': DateTime.now().add(const Duration(hours: 24)).toIso8601String(),
+        if (caption != null) 'caption': caption,
+      },
+      permissions: [
+        Permission.read(Role.any()),
+        Permission.update(Role.user(ownerId)),
+        Permission.delete(Role.user(ownerId)),
+      ],
+    );
+  }
+
+  Future<models.RowList> getStories(List<String> profileIds) async {
+    return await _db.listRows(
+      databaseId: Environment.appwriteDatabaseId,
+      tableId: storiesCollection,
+      queries: [
+        Query.equal('profileId', profileIds),
+        Query.greaterThan('expiresAt', DateTime.now().toIso8601String()),
+      ],
+    );
   }
 }

@@ -66,10 +66,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
               ),
             ]),
             const SizedBox(height: 20),
-            StatusRailSection(
+            const StatusRailSection(
               title: "People",
-              items: movies,
-              isLoading: loading,
             ),
             const SizedBox(height: 20),
             ProductGrid(),
