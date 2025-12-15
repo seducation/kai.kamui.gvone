@@ -1,23 +1,116 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:my_app/appwrite_service.dart';
 import 'package:my_app/chat_messaging_screen.dart';
 import 'package:my_app/model/chat_model.dart';
 import 'package:my_app/one_time_message_screen.dart';
+import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:appwrite/models.dart' as models;
 
-class CNMChatsTabscreen extends StatelessWidget {
-  final List<ChatModel> chatItems;
-  final bool isLoading;
+class CNMChatsTabscreen extends StatefulWidget {
+  const CNMChatsTabscreen({super.key});
 
-  const CNMChatsTabscreen(
-      {super.key, required this.chatItems, this.isLoading = false});
+  @override
+  State<CNMChatsTabscreen> createState() => _CNMChatsTabscreenState();
+}
+
+class _CNMChatsTabscreenState extends State<CNMChatsTabscreen> {
+  late AppwriteService appwrite;
+  List<ChatModel> _chatItems = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    appwrite = Provider.of<AppwriteService>(context, listen: false);
+    _getConversations();
+  }
+
+  Future<void> _getConversations() async {
+    try {
+      final user = await appwrite.getUser();
+      if (user == null) {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+
+      // 1. Fetch all profiles and create a map for efficient lookup.
+      final profiles = await appwrite.getProfiles();
+      final profileMap = {
+        for (var profile in profiles.rows) profile.data['ownerId']: profile
+      };
+
+      // 2. Fetch all messages
+      final messages = await appwrite.getAllMessages();
+      final conversations = <String, ChatModel>{};
+
+      // 3. Process messages to build conversation list
+      for (final message in messages.rows) {
+        final chatId = message.data['chatId'] as String;
+        
+        // Determine the other user's ID in the chat
+        final ids = chatId.split('_');
+        final otherUserId = ids.firstWhere((id) => id != user.$id, orElse: () => '');
+
+        if (otherUserId.isEmpty || !profileMap.containsKey(otherUserId)) {
+          continue; // Skip if other user's profile is not found
+        }
+        
+        final models.Row profile = profileMap[otherUserId]!;
+        final conversationId = _getChatId(user.$id, otherUserId);
+
+        // Group messages by conversation
+        if (!conversations.containsKey(conversationId)) {
+           conversations[conversationId] = ChatModel(
+            userId: profile.data['ownerId'],
+            name: profile.data['name'] as String,
+            message: message.data['message'] as String,
+            time: message.$createdAt,
+            imgPath: profile.data['profileImageUrl'] as String,
+            hasStory: false, // Placeholder
+            messageCount: 0, // Placeholder
+          );
+        } else {
+            // Update with the latest message
+            conversations[conversationId]!.message = message.data['message'] as String;
+            conversations[conversationId]!.time = message.$createdAt;
+        }
+      }
+      
+      if (mounted) {
+        setState(() {
+          _chatItems = conversations.values.toList();
+          // Sort by time
+          _chatItems.sort((a, b) => b.time.compareTo(a.time));
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+   String _getChatId(String userId1, String userId2) {
+    final ids = [userId1, userId2]..sort();
+    return ids.join('_');
+  }
+
 
   void _viewStory(BuildContext context, int index) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => OneTimeMessageScreen(
-          message: "This is a one-time message from ${chatItems[index].name}",
+          message: "This is a one-time message from ${_chatItems[index].name}",
           onStoryViewed: () {
             // This should be handled by the parent widget
           },
@@ -29,19 +122,19 @@ class CNMChatsTabscreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: isLoading
+      body: _isLoading
           ? _buildShimmerLoading()
           : CustomScrollView(
               slivers: [
                 SliverToBoxAdapter(
                   child: StatusBar(
-                      chatItems: chatItems,
+                      chatItems: _chatItems,
                       onViewStory: (index) => _viewStory(context, index)),
                 ),
                 SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
-                      final chat = chatItems[index];
+                      final chat = _chatItems[index];
                       return ChatListItem(
                           chat: chat,
                           onTap: () {
@@ -56,7 +149,7 @@ class CNMChatsTabscreen extends StatelessWidget {
                             );
                           });
                     },
-                    childCount: chatItems.length,
+                    childCount: _chatItems.length,
                   ),
                 ),
               ],

@@ -106,13 +106,13 @@ class _ChatsScreenState extends State<ChatsScreen> {
             ],
           ),
         ),
-        body: TabBarView(
+        body: const TabBarView(
           children: [
-            const CNMNotificationsTabscreen(),
-            const CNMUpdatesTabscreen(),
-            CNMChatsTabscreen(chatItems: _chatItems),
-            const CNMReplyTabscreen(),
-            const CNMCallsTabscreen(),
+            CNMNotificationsTabscreen(),
+            CNMUpdatesTabscreen(),
+            CNMChatsTabscreen(),
+            CNMReplyTabscreen(),
+            CNMCallsTabscreen(),
           ],
         ),
         floatingActionButton: FloatingActionButton(

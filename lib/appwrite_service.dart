@@ -303,6 +303,13 @@ class AppwriteService {
     );
   }
 
+  Future<models.RowList> getAllMessages() async {
+    return await _db.listRows(
+      databaseId: Environment.appwriteDatabaseId,
+      tableId: messagesCollection,
+    );
+  }
+
   Future<List<PosterItem>> getMovies() async {
     try {
       final data = await _db.listRows(
