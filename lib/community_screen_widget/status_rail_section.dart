@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:my_app/add_to_story.dart';
+import 'package:go_router/go_router.dart';
 import 'package:my_app/appwrite_service.dart';
 import 'package:my_app/auth_service.dart';
 import 'package:my_app/model/profile.dart';
@@ -108,7 +108,6 @@ class _StatusRailSectionState extends State<StatusRailSection> {
 
               if (index == 0) {
                 return AddToStoryWidget(
-                  profileId: _currentUserProfile?.id,
                   hasStory: hasStory,
                   onTap: () {
                     if (hasStory) {
@@ -119,11 +118,7 @@ class _StatusRailSectionState extends State<StatusRailSection> {
                         ),
                       ));
                     } else {
-                      if (_currentUserProfile?.id != null) {
-                        Navigator.of(context).push(MaterialPageRoute(
-                          builder: (context) => AddToStoryScreen(profileId: _currentUserProfile!.id),
-                        ));
-                      }
+                      context.go('/add_to_story');
                     }
                   },
                 );
@@ -141,13 +136,11 @@ class _StatusRailSectionState extends State<StatusRailSection> {
 }
 
 class AddToStoryWidget extends StatelessWidget {
-  final String? profileId;
   final bool hasStory;
   final VoidCallback onTap;
 
   const AddToStoryWidget({
     super.key,
-    this.profileId,
     required this.hasStory,
     required this.onTap,
   });

@@ -1,13 +1,13 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:my_app/appwrite_service.dart';
 import 'package:provider/provider.dart';
 
 class AddToStoryScreen extends StatefulWidget {
-  final String profileId;
-
-  const AddToStoryScreen({super.key, required this.profileId});
+  const AddToStoryScreen({super.key});
 
   @override
   State<AddToStoryScreen> createState() => _AddToStoryScreenState();
@@ -17,7 +17,7 @@ class _AddToStoryScreenState extends State<AddToStoryScreen> {
   final ImagePicker _picker = ImagePicker();
   XFile? _imageFile;
   final TextEditingController _captionController = TextEditingController();
-  bool _isLoading = false;
+  bool _isUploading = false;
 
   Future<void> _pickImage() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
@@ -28,7 +28,7 @@ class _AddToStoryScreenState extends State<AddToStoryScreen> {
     }
   }
 
-  Future<void> _uploadStory() async {
+  Future<void> _uploadAndNavigate() async {
     if (_imageFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select an image first.')),
@@ -37,7 +37,7 @@ class _AddToStoryScreenState extends State<AddToStoryScreen> {
     }
 
     setState(() {
-      _isLoading = true;
+      _isUploading = true;
     });
 
     try {
@@ -52,26 +52,26 @@ class _AddToStoryScreenState extends State<AddToStoryScreen> {
 
       final mediaUrl = appwriteService.getFileViewUrl(uploadedFile.$id);
 
-      await appwriteService.createStory(
-        profileId: widget.profileId,
-        mediaUrl: mediaUrl,
-        mediaType: 'image',
-        caption: _captionController.text,
-      );
+      final storyData = {
+        'mediaUrl': mediaUrl,
+        'mediaType': 'image',
+        'caption': _captionController.text,
+      };
 
       if (mounted) {
-        Navigator.of(context).pop();
+        final storyDataEncoded = jsonEncode(storyData);
+        context.go('/where_to_post_story?storyData=$storyDataEncoded');
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to upload story: $e')),
+          SnackBar(content: Text('Failed to upload image: $e')),
         );
       }
     } finally {
       if (mounted) {
         setState(() {
-          _isLoading = false;
+          _isUploading = false;
         });
       }
     }
@@ -84,14 +84,14 @@ class _AddToStoryScreenState extends State<AddToStoryScreen> {
         title: const Text('Add to Story'),
         actions: [
           TextButton(
-            onPressed: _isLoading ? null : _uploadStory,
-            child: _isLoading
+            onPressed: _isUploading ? null : _uploadAndNavigate,
+            child: _isUploading
                 ? const SizedBox(
                     height: 20,
                     width: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('Post'),
+                : const Text('Next'),
           ),
         ],
       ),

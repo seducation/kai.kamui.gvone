@@ -7,9 +7,11 @@ import 'package:my_app/environment.dart';
 import 'package:my_app/profile_page.dart';
 import 'package:my_app/results_searches.dart';
 import 'package:my_app/where_to_post.dart';
+import 'package:my_app/where_to_post_story.dart';
 import 'package:provider/provider.dart';
 
 import 'add_post_screen.dart';
+import 'add_to_story.dart';
 import 'auth_service.dart';
 import 'home_screen.dart';
 import 'search_screen.dart';
@@ -105,6 +107,10 @@ GoRouter _createRouter(AuthService authService) {
             path: 'add_post',
             builder: (context, state) => const AddPostScreen(),
           ),
+          GoRoute(
+            path: 'add_to_story',
+            builder: (context, state) => const AddToStoryScreen(),
+          ),
         ]
       ),
       GoRoute(
@@ -118,6 +124,10 @@ GoRouter _createRouter(AuthService authService) {
        GoRoute(
         path: '/where_to_post',
         builder: (context, state) => WhereToPostScreen(postData: state.extra as Map<String, dynamic>),
+      ),
+      GoRoute(
+        path: '/where_to_post_story',
+        builder: (context, state) => WhereToPostStoryScreen.fromQuery(state.uri.query),
       ),
       GoRoute(
         path: '/profile',
