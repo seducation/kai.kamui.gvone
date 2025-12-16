@@ -23,8 +23,6 @@ class StatusRailSection extends StatefulWidget {
 class _StatusRailSectionState extends State<StatusRailSection> {
   bool _isLoading = true;
   List<Profile> _profilesWithStories = [];
-  Profile? _currentUserProfile;
-  List<Story> _currentUserStories = [];
   Map<String, List<Story>> _storiesMap = {};
 
   @override
@@ -45,23 +43,28 @@ class _StatusRailSectionState extends State<StatusRailSection> {
       final user = await authService.getCurrentUser();
 
       if (user != null && mounted) {
-        // Fetch current user's profile
-        final userProfiles = await appwriteService.getUserProfiles(ownerId: user.id);
-        if (userProfiles.rows.isNotEmpty) {
-          _currentUserProfile = Profile.fromRow(userProfiles.rows.first);
-        }
+        // Fetch current user's own profiles (all types)
+        final userProfilesResponse = await appwriteService.getUserProfiles(ownerId: user.id);
+        final userProfiles = userProfilesResponse.rows.map((row) => Profile.fromRow(row)).toList();
 
         // Fetch profiles of users the current user is following
-        final followingProfiles = await appwriteService.getFollowingProfiles(userId: user.id);
-        final followedProfiles = followingProfiles.rows.map((row) => Profile.fromRow(row)).toList();
+        final followingProfilesResponse = await appwriteService.getFollowingProfiles(userId: user.id);
+        final followedProfiles = followingProfilesResponse.rows.map((row) => Profile.fromRow(row)).toList();
+
+        // Combine all profiles, using a map to remove duplicates just in case
+        final allProfilesMap = <String, Profile>{};
+        for (var profile in userProfiles) {
+          allProfilesMap[profile.id] = profile;
+        }
+        for (var profile in followedProfiles) {
+          allProfilesMap[profile.id] = profile;
+        }
+        final allProfiles = allProfilesMap.values.toList();
 
         // Create a list of all profile IDs to fetch stories for
-        final profileIds = followedProfiles.map((p) => p.id).toList();
-        if (_currentUserProfile != null) {
-          profileIds.add(_currentUserProfile!.id);
-        }
+        final profileIds = allProfiles.map((p) => p.id).toList();
 
-        // Fetch all stories
+        // Fetch all stories if there are any profiles
         if (profileIds.isNotEmpty) {
           final storiesResponse = await appwriteService.getStories(profileIds);
           final allStories = storiesResponse.rows.map((row) => Story.fromRow(row)).toList();
@@ -73,15 +76,10 @@ class _StatusRailSectionState extends State<StatusRailSection> {
           }
           _storiesMap = storiesMap;
 
-          // Filter followed profiles to only include those with stories
-          _profilesWithStories = followedProfiles
+          // Filter the combined list of profiles to only include those with stories
+          _profilesWithStories = allProfiles
               .where((profile) => _storiesMap.containsKey(profile.id) && _storiesMap[profile.id]!.isNotEmpty)
               .toList();
-
-          // Get the current user's stories
-          if (_currentUserProfile != null) {
-            _currentUserStories = _storiesMap[_currentUserProfile!.id] ?? [];
-          }
         }
       }
     } catch (e) {
@@ -97,8 +95,6 @@ class _StatusRailSectionState extends State<StatusRailSection> {
 
   @override
   Widget build(BuildContext context) {
-    final hasCurrentUserStory = _currentUserStories.isNotEmpty;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -122,20 +118,10 @@ class _StatusRailSectionState extends State<StatusRailSection> {
                 if (_isLoading)
                   const ShimmerCirclePlaceholder()
                 else
+                  // Dedicated "Add to Story" button
                   AddToStoryWidget(
-                    profile: _currentUserProfile,
-                    hasStory: hasCurrentUserStory,
                     onTap: () {
-                      if (hasCurrentUserStory) {
-                        Navigator.of(context).push(MaterialPageRoute(
-                          builder: (context) => StoryViewScreen(
-                            stories: _currentUserStories,
-                            profile: _currentUserProfile!,
-                          ),
-                        ));
-                      } else {
-                        context.go('/add_to_story');
-                      }
+                      context.go('/add_to_story');
                     },
                   ),
                 const SizedBox(width: 12),
@@ -151,7 +137,7 @@ class _StatusRailSectionState extends State<StatusRailSection> {
                           itemCount: _profilesWithStories.length,
                           itemBuilder: (context, index) {
                             final profile = _profilesWithStories[index];
-                            final stories = _storiesMap[profile.id] ?? <Story>[];
+                            final stories = _storiesMap[profile.id] ?? [];
                             return StatusItemWidget(profile: profile, stories: stories);
                           },
                         ),
@@ -165,21 +151,17 @@ class _StatusRailSectionState extends State<StatusRailSection> {
   }
 }
 
+// A simple widget for the "Add to Story" button
 class AddToStoryWidget extends StatelessWidget {
-  final Profile? profile;
-  final bool hasStory;
   final VoidCallback onTap;
 
   const AddToStoryWidget({
     super.key,
-    this.profile,
-    required this.hasStory,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final appwriteService = context.read<AppwriteService>();
     return GestureDetector(
       onTap: onTap,
       child: SizedBox(
@@ -189,40 +171,30 @@ class AddToStoryWidget extends StatelessWidget {
             Stack(
               alignment: Alignment.center,
               children: [
-                CircleAvatar(
+                const CircleAvatar(
                   radius: 35,
                   backgroundColor: Colors.grey,
-                  backgroundImage: (profile?.profileImageUrl != null && hasStory)
-                      ? NetworkImage(appwriteService.getFileViewUrl(profile!.profileImageUrl!))
-                      : null,
                 ),
-                if (hasStory)
-                  const CircleAvatar(
-                    radius: 37,
-                    backgroundColor: Colors.transparent,
-                    child: Icon(Icons.check_circle, color: Colors.green, size: 24),
-                  )
-                else
-                  Container(
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white,
-                    ),
-                    child: const Icon(
-                      Icons.add,
-                      color: Colors.black,
-                      size: 24,
-                    ),
+                Container(
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white,
                   ),
+                  child: const Icon(
+                    Icons.add,
+                    color: Colors.black,
+                    size: 24,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 8),
-            Text(
-              hasStory ? 'Your Story' : 'Add to Story',
+            const Text(
+              'Add to Story',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12),
+              style: TextStyle(fontSize: 12),
             ),
           ],
         ),
