@@ -72,11 +72,9 @@ class _ChatMessagingScreenState extends State<ChatMessagingScreen> {
       if (!mounted) return;
 
       String nameToShow = receiverChatProfile.data['name']; // Default to current chat profile name
-      for (final profile in receiverOwnerProfiles.rows) {
-        if (profile.data['type'] == 'profile') {
-          nameToShow = profile.data['name'];
-          break;
-        }
+      final receiverMainProfile = receiverOwnerProfiles.rows.where((p) => p.data['type'] == 'profile');
+      if (receiverMainProfile.isNotEmpty) {
+        nameToShow = receiverMainProfile.first.data['name'];
       }
 
       setState(() {
@@ -139,6 +137,19 @@ class _ChatMessagingScreenState extends State<ChatMessagingScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Go and create a profile first'),
+        ));
+      }
+      return;
+    }
+
+    final receiverProfiles = await _appwriteService.getUserProfiles(ownerId: _receiverOwnerId!);
+    if (!mounted) return;
+    final receiverMainProfiles = receiverProfiles.rows.where((p) => p.data['type'] == 'profile');
+
+    if (receiverMainProfiles.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('This user does not have a main profile and cannot receive messages.'),
         ));
       }
       return;
