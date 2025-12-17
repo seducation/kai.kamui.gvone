@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:gal/gal.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:my_app/main.dart'; // To access the global 'cameras' list
 
@@ -225,7 +226,7 @@ class _CameraScreenState extends State<CameraScreen> {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white, width: 4),
-                        color: Colors.white.withValues(alpha: 0.2),
+                        color: Colors.white.withAlpha(51),
                       ),
                       child: Container(
                         margin: const EdgeInsets.all(4),
@@ -301,7 +302,7 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   Widget _buildPostCaptureControlsRow() {
-    // Restored UI: [Thumbnail] ... [Spacer] ... [Pill: Cross | Camera | Download]
+    // Restored UI: [Thumbnail] ... [Pill] ... [Send]
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0),
       child: Row(
@@ -321,7 +322,7 @@ class _CameraScreenState extends State<CameraScreen> {
             ),
           ),
 
-          // Right: The Pill Container (Discard, Retake/Add, Download)
+          // Center: The Pill Container (Discard, Retake/Add, Download)
           Container(
             height: 50,
             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -340,12 +341,7 @@ class _CameraScreenState extends State<CameraScreen> {
 
                 // Camera (Take another photo)
                 GestureDetector(
-                  onTap: () {
-                    // Logic to take another photo
-                    // Since we are already in live preview mode, clicking this
-                    // should trigger the same capture logic as the main shutter.
-                    _takePicture();
-                  },
+                  onTap: _takePicture,
                   child: const Icon(
                     Icons.camera_alt,
                     color: Colors.white,
@@ -363,6 +359,26 @@ class _CameraScreenState extends State<CameraScreen> {
                     size: 28,
                   ),
                 ),
+              ],
+            ),
+          ),
+
+          // Right: Send Button
+          TextButton(
+            onPressed: () => context.go('/where_to_post',
+                extra: {'images': _capturedImages}),
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.blue,
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20.0),
+              ),
+            ),
+            child: const Row(
+              children: [
+                Text('Send', style: TextStyle(color: Colors.white, fontSize: 16.0)),
+                SizedBox(width: 8.0),
+                Icon(Icons.send, color: Colors.white, size: 20.0),
               ],
             ),
           ),
