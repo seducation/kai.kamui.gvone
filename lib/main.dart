@@ -1,4 +1,5 @@
 import 'package:appwrite/appwrite.dart';
+import 'package:camera/camera.dart'; // Added camera import
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:my_app/appwrite_service.dart';
@@ -35,8 +36,16 @@ import 'setting_safety_screen.dart';
 import 'setting_support_screen.dart';
 import 'about_searches_widgets/about_searches_widget.dart';
 
+List<CameraDescription> cameras = []; // Global cameras list
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  try {
+    cameras = await availableCameras();
+  } on CameraException catch (e) {
+    debugPrint('Error initializing camera: $e');
+  }
 
   final Client client = Client()
     ..setEndpoint(Environment.appwritePublicEndpoint)
@@ -83,7 +92,9 @@ GoRouter _createRouter(AuthService authService) {
     refreshListenable: authService,
     redirect: (BuildContext context, GoRouterState state) {
       final loggedIn = authService.isLoggedIn;
-      final isLoggingIn = state.matchedLocation == '/signin' || state.matchedLocation == '/signup';
+      final isLoggingIn =
+          state.matchedLocation == '/signin' ||
+          state.matchedLocation == '/signup';
 
       // If the user is logged in and trying to access a login screen, redirect to home.
       if (loggedIn && isLoggingIn) {
@@ -111,7 +122,7 @@ GoRouter _createRouter(AuthService authService) {
             path: 'add_to_story',
             builder: (context, state) => const AddToStoryScreen(),
           ),
-        ]
+        ],
       ),
       GoRoute(
         path: '/signin',
@@ -121,27 +132,35 @@ GoRouter _createRouter(AuthService authService) {
         path: '/signup',
         builder: (context, state) => const SignUpScreen(),
       ),
-       GoRoute(
+      GoRoute(
         path: '/where_to_post',
-        builder: (context, state) => WhereToPostScreen(postData: state.extra as Map<String, dynamic>),
+        builder: (context, state) =>
+            WhereToPostScreen(postData: state.extra as Map<String, dynamic>),
       ),
       GoRoute(
         path: '/where_to_post_story',
-        builder: (context, state) => WhereToPostStoryScreen.fromQuery(state.uri.query),
+        builder: (context, state) =>
+            WhereToPostStoryScreen.fromQuery(state.uri.query),
       ),
       GoRoute(
         path: '/profile',
         builder: (context, state) => const ProfileScreen(),
       ),
-       GoRoute(
+      GoRoute(
         path: '/profile/:id',
-        builder: (context, state) => ProfileScreen(key: state.pageKey, userId: state.pathParameters['id']!),
+        builder: (context, state) => ProfileScreen(
+          key: state.pageKey,
+          userId: state.pathParameters['id']!,
+        ),
       ),
       GoRoute(
         path: '/profile_page/:id',
-        builder: (context, state) => ProfilePageScreen(key: state.pageKey, profileId: state.pathParameters['id']!),
+        builder: (context, state) => ProfilePageScreen(
+          key: state.pageKey,
+          profileId: state.pathParameters['id']!,
+        ),
       ),
-       GoRoute(
+      GoRoute(
         path: '/settings',
         builder: (context, state) => const SettingsScreen(),
       ),
@@ -151,23 +170,22 @@ GoRouter _createRouter(AuthService authService) {
       ),
       GoRoute(
         path: '/search',
-        builder: (context, state) => SearchScreen(appwriteService: context.read<AppwriteService>()),
+        builder: (context, state) =>
+            SearchScreen(appwriteService: context.read<AppwriteService>()),
         routes: [
           GoRoute(
             path: ':query',
-            builder: (context, state) => ResultsSearches(
-              query: state.pathParameters['query']!,
-            ),
+            builder: (context, state) =>
+                ResultsSearches(query: state.pathParameters['query']!),
           ),
         ],
       ),
       GoRoute(
         path: '/chat/:userId',
-        builder: (context, state) => ChatScreen(
-          receiverId: state.pathParameters['userId']!,
-        ),
+        builder: (context, state) =>
+            ChatScreen(receiverId: state.pathParameters['userId']!),
       ),
-       GoRoute(
+      GoRoute(
         path: '/setting_active_status',
         builder: (context, state) => const SettingActiveStatusScreen(),
       ),
@@ -237,26 +255,11 @@ class _MainScreenState extends State<MainScreen> {
       body: _screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat),
-            label: 'Chats',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Search',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: 'Community',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.camera),
-            label: 'Lens',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chats'),
+          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Community'),
+          BottomNavigationBarItem(icon: Icon(Icons.camera), label: 'Lens'),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.amber[800],

@@ -4,8 +4,9 @@ import 'package:appwrite/models.dart' as models;
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
+// import 'package:image_picker/image_picker.dart'; // Removed unused import
 import 'package:my_app/appwrite_service.dart';
+import 'package:my_app/camera_screen.dart'; // Added import
 import 'package:my_app/webview_screen.dart';
 import 'package:provider/provider.dart';
 
@@ -23,9 +24,10 @@ class _LensScreenState extends State<LensScreen> {
   bool _hasMore = true;
   String? _lastRowId;
   AppwriteService? _appwriteService;
+  bool _isCameraOpen = false; // Added state
 
   final _scrollController = ScrollController();
-  final ImagePicker _picker = ImagePicker();
+  // final ImagePicker _picker = ImagePicker(); // Removed ImagePicker
 
   @override
   void initState() {
@@ -91,50 +93,37 @@ class _LensScreenState extends State<LensScreen> {
     await _fetchData();
   }
 
-  Future<void> _uploadImage() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image == null) {
-      return;
-    }
-
-    final bytes = await image.readAsBytes();
-    final filename = image.name;
-
+  void _onCameraTap() {
     setState(() {
-      _isLoading = true;
+      _isCameraOpen = true;
     });
+  }
 
-    try {
-      await _appwriteService!.uploadImage(bytes: bytes, filename: filename);
-
-      // Refresh data after upload
+  Future<void> _closeCamera({bool refreshed = false}) async {
+    setState(() {
+      _isCameraOpen = false;
+    });
+    if (refreshed) {
       await _refreshData();
-    } on AppwriteException catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = e.message;
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     }
   }
 
   void _launchUrl(String url) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => WebViewScreen(url: url),
-      ),
+      MaterialPageRoute(builder: (context) => WebViewScreen(url: url)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isCameraOpen) {
+      return CameraScreen(
+        onClose: () => _closeCamera(),
+        onImageUploaded: () => _closeCamera(refreshed: true),
+      );
+    }
+
     return Scaffold(
       body: CustomScrollView(
         controller: _scrollController,
@@ -158,7 +147,7 @@ class _LensScreenState extends State<LensScreen> {
           ),
           SliverToBoxAdapter(
             child: GestureDetector(
-              onTap: _uploadImage,
+              onTap: _onCameraTap, // Changed to _onCameraTap
               child: const Card(
                 margin: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                 child: Padding(
@@ -197,60 +186,61 @@ class _LensScreenState extends State<LensScreen> {
                   QuiltedGridTile(1, 1),
                 ],
               ),
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final item = _items[index];
-                  final isBigTile = (index % 3) == 0;
-                  return GestureDetector(
-                    onTap: () {
-                      if (item.data['link'] != null) { // Using 'link' field
-                        _launchUrl(item.data['link']);
-                      }
-                    },
-                    child: Card(
-                      clipBehavior: Clip.antiAlias,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (item.data['imageUrl'] != null)
-                            Expanded(
-                              child: CachedNetworkImage(
-                                imageUrl: item.data['imageUrl'],
-                                fit: BoxFit.cover,
-                                placeholder: (context, url) =>
-                                    const Center(child: CircularProgressIndicator()),
-                                errorWidget: (context, url, error) =>
-                                    const Icon(Icons.error),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final item = _items[index];
+                final isBigTile = (index % 3) == 0;
+                return GestureDetector(
+                  onTap: () {
+                    if (item.data['link'] != null) {
+                      // Using 'link' field
+                      _launchUrl(item.data['link']);
+                    }
+                  },
+                  child: Card(
+                    clipBehavior: Clip.antiAlias,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (item.data['imageUrl'] != null)
+                          Expanded(
+                            child: CachedNetworkImage(
+                              imageUrl: item.data['imageUrl'],
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => const Center(
+                                child: CircularProgressIndicator(),
                               ),
+                              errorWidget: (context, url, error) =>
+                                  const Icon(Icons.error),
                             ),
-                          if (item.data['title'] != null)
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(
-                                item.data['title'],
-                                style:
-                                    const TextStyle(fontWeight: FontWeight.bold),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                          ),
+                        if (item.data['title'] != null)
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                              item.data['title'],
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          if (item.data['description'] != null && !isBigTile)
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 8.0),
-                              child: Text(
-                                item.data['description'],
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                          ),
+                        if (item.data['description'] != null && !isBigTile)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8.0,
                             ),
-                        ],
-                      ),
+                            child: Text(
+                              item.data['description'],
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
                     ),
-                  );
-                },
-                childCount: _items.length,
-              ),
+                  ),
+                );
+              }, childCount: _items.length),
             ),
           ),
           if (_isLoading)
