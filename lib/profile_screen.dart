@@ -22,12 +22,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final authService = Provider.of<AuthService>(context, listen: false);
-    final appwriteService = Provider.of<AppwriteService>(context, listen: false);
+    final appwriteService = Provider.of<AppwriteService>(
+      context,
+      listen: false,
+    );
     _userFuture = authService.getCurrentUser();
     _userFuture.then((user) {
       if (user != null) {
         setState(() {
-          _profilesFuture = appwriteService.getUserProfiles(ownerId: widget.userId ?? user.id);
+          _profilesFuture = appwriteService.getUserProfiles(
+            ownerId: widget.userId ?? user.id,
+          );
         });
       }
     });
@@ -43,14 +48,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            context.go('/');
+            Navigator.maybePop(context);
           },
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
-              context.go('/settings');
+              context.push('/settings');
             },
           ),
         ],
@@ -92,10 +97,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 width: 100,
                                 height: 100,
                                 decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(
-                                        color: Theme.of(context).primaryColor,
-                                        width: 2)),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: Theme.of(context).primaryColor,
+                                    width: 2,
+                                  ),
+                                ),
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(8),
                                   child: Icon(
@@ -116,19 +123,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           .textTheme
                                           .headlineSmall
                                           ?.copyWith(
-                                              fontWeight: FontWeight.bold),
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
                                       user.email,
-                                      style:
-                                          Theme.of(context).textTheme.bodyLarge,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyLarge,
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
                                       '+1 234 567 890', // Placeholder for phone number
-                                      style:
-                                          Theme.of(context).textTheme.bodyLarge,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyLarge,
                                     ),
                                   ],
                                 ),
@@ -168,12 +178,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     builder: (context, profileSnapshot) {
                       if (profileSnapshot.connectionState ==
                           ConnectionState.waiting) {
-                        return const Center(
-                            child: CircularProgressIndicator());
+                        return const Center(child: CircularProgressIndicator());
                       }
                       if (profileSnapshot.hasError) {
                         return Center(
-                            child: Text('Error: ${profileSnapshot.error}'));
+                          child: Text('Error: ${profileSnapshot.error}'),
+                        );
                       }
                       if (!profileSnapshot.hasData ||
                           profileSnapshot.data!.rows.isEmpty) {
@@ -189,8 +199,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           final profile = profiles[index];
                           return ListTile(
                             leading: CircleAvatar(
-                              backgroundImage:
-                                  NetworkImage(profile.data['profileImageUrl'] ?? ''),
+                              backgroundImage: NetworkImage(
+                                profile.data['profileImageUrl'] ?? '',
+                              ),
                             ),
                             title: Text(profile.data['name'] ?? 'No Name'),
                             subtitle: Text(profile.data['type'] ?? 'No Type'),

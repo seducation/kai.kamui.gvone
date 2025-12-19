@@ -138,7 +138,7 @@ class _LensScreenState extends State<LensScreen> {
               IconButton(
                 icon: const Icon(Icons.menu),
                 onPressed: () {
-                  context.go('/profile');
+                  context.push('/profile');
                 },
               ),
             ],

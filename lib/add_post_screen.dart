@@ -4,7 +4,6 @@ import 'dart:ui';
 import 'package:appwrite/appwrite.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import 'appwrite_service.dart';
@@ -45,8 +44,12 @@ class _AddPostScreenState extends State<AddPostScreen> {
       final appwriteService = context.read<AppwriteService>();
       final user = await appwriteService.getUser();
       if (user != null) {
-        final response = await appwriteService.getUserProfiles(ownerId: user.$id);
-        final profiles = response.rows.map((row) => Profile.fromMap(row.data, row.$id)).toList();
+        final response = await appwriteService.getUserProfiles(
+          ownerId: user.$id,
+        );
+        final profiles = response.rows
+            .map((row) => Profile.fromMap(row.data, row.$id))
+            .toList();
         setState(() {
           _profiles = profiles;
           if (_profiles.isNotEmpty) {
@@ -69,7 +72,8 @@ class _AddPostScreenState extends State<AddPostScreen> {
     final end = selection.end;
     final selectedText = selection.textInside(text);
 
-    final newText = text.substring(0, start) +
+    final newText =
+        text.substring(0, start) +
         prefix +
         selectedText +
         (suffix ?? prefix) +
@@ -78,7 +82,8 @@ class _AddPostScreenState extends State<AddPostScreen> {
     _descriptionController.value = TextEditingValue(
       text: newText,
       selection: TextSelection.collapsed(
-          offset: end + prefix.length + (suffix?.length ?? prefix.length)),
+        offset: end + prefix.length + (suffix?.length ?? prefix.length),
+      ),
     );
   }
 
@@ -97,16 +102,17 @@ class _AddPostScreenState extends State<AddPostScreen> {
 
   Future<void> _continueToPostDestination() async {
     if (_titleController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please add a title')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please add a title')));
       return;
     }
 
     if (_codeController.text.length > 5000) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Code snippet cannot exceed 5000 characters')),
+          content: Text('Code snippet cannot exceed 5000 characters'),
+        ),
       );
       return;
     }
@@ -174,7 +180,15 @@ class _AddPostScreenState extends State<AddPostScreen> {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         allowMultiple: true,
         type: FileType.custom,
-        allowedExtensions: ['jpg', 'pdf', 'doc', 'png', 'mp4', 'mov', 'avi'], // Example extensions
+        allowedExtensions: [
+          'jpg',
+          'pdf',
+          'doc',
+          'png',
+          'mp4',
+          'mov',
+          'avi',
+        ], // Example extensions
         withData: true, // This is crucial for web and cross-platform uploads
       );
 
@@ -182,7 +196,9 @@ class _AddPostScreenState extends State<AddPostScreen> {
         setState(() {
           _selectedFiles = result.files;
         });
-        _showSnackbar('Successfully selected ${_selectedFiles.length} file(s).');
+        _showSnackbar(
+          'Successfully selected ${_selectedFiles.length} file(s).',
+        );
       } else {
         // User canceled the picker
         _showSnackbar('File selection cancelled.');
@@ -195,10 +211,7 @@ class _AddPostScreenState extends State<AddPostScreen> {
   // Helper function to show a temporary message
   void _showSnackbar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 2),
-      ),
+      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
     );
   }
 
@@ -212,74 +225,80 @@ class _AddPostScreenState extends State<AddPostScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create Post'),
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => context.go('/'),
-        ),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.help_outline),
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        // Optional: show confirmation dialog before popping if fields are dirty
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Create Post'),
+          leading: IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () => Navigator.maybePop(context),
           ),
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : _continueToPostDestination,
-              child: _isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                      ))
-                  : const Text('Publish'),
-            ),
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildAttachments(),
-            const SizedBox(height: 16),
-            // Title
-            TextField(
-              controller: _titleController,
-              decoration: const InputDecoration(
-                labelText: 'Post Title',
-                border: OutlineInputBorder(),
-              ),
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-
-            // Toolbar and Description
-            _buildDescriptionEditor(),
-            const SizedBox(height: 16),
-
-            // Code Editor
-            _buildCodeEditor(),
-            const SizedBox(height: 16),
-
-            // Tags
-            TextField(
-              controller: _tagsController,
-              decoration: const InputDecoration(
-                labelText: 'Tags (comma separated)',
-                border: OutlineInputBorder(),
+          actions: [
+            IconButton(onPressed: () {}, icon: const Icon(Icons.help_outline)),
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _continueToPostDestination,
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Publish'),
               ),
             ),
-            const SizedBox(height: 16),
-
-            _buildAuthoreIdSection(),
           ],
         ),
-      ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildAttachments(),
+              const SizedBox(height: 16),
+              // Title
+              TextField(
+                controller: _titleController,
+                decoration: const InputDecoration(
+                  labelText: 'Post Title',
+                  border: OutlineInputBorder(),
+                ),
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Toolbar and Description
+              _buildDescriptionEditor(),
+              const SizedBox(height: 16),
+
+              // Code Editor
+              _buildCodeEditor(),
+              const SizedBox(height: 16),
+
+              // Tags
+              TextField(
+                controller: _tagsController,
+                decoration: const InputDecoration(
+                  labelText: 'Tags (comma separated)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              _buildAuthoreIdSection(),
+            ],
+          ),
+        ), // Scaffold
+      ), // PopScope
     );
   }
 
@@ -287,7 +306,10 @@ class _AddPostScreenState extends State<AddPostScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Description', style: TextStyle(fontWeight: FontWeight.bold)),
+        const Text(
+          'Description',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 8),
         // Toolbar
         SingleChildScrollView(
@@ -295,32 +317,40 @@ class _AddPostScreenState extends State<AddPostScreen> {
           child: Row(
             children: [
               IconButton(
-                  icon: const Icon(Icons.format_bold),
-                  onPressed: () => _wrapSelection('**')),
+                icon: const Icon(Icons.format_bold),
+                onPressed: () => _wrapSelection('**'),
+              ),
               IconButton(
-                  icon: const Icon(Icons.format_italic),
-                  onPressed: () => _wrapSelection('*')),
+                icon: const Icon(Icons.format_italic),
+                onPressed: () => _wrapSelection('*'),
+              ),
               IconButton(
-                  icon: const Icon(Icons.looks_one),
-                  onPressed: () => _insertAtCursor('# ')),
+                icon: const Icon(Icons.looks_one),
+                onPressed: () => _insertAtCursor('# '),
+              ),
               IconButton(
-                  icon: const Icon(Icons.looks_two),
-                  onPressed: () => _insertAtCursor('## ')),
+                icon: const Icon(Icons.looks_two),
+                onPressed: () => _insertAtCursor('## '),
+              ),
               IconButton(
-                  icon: const Icon(Icons.format_list_bulleted),
-                  onPressed: () => _insertAtCursor('\n- ')),
+                icon: const Icon(Icons.format_list_bulleted),
+                onPressed: () => _insertAtCursor('\n- '),
+              ),
               IconButton(
-                  icon: const Icon(Icons.format_list_numbered),
-                  onPressed: () => _insertAtCursor('\n1. ')),
+                icon: const Icon(Icons.format_list_numbered),
+                onPressed: () => _insertAtCursor('\n1. '),
+              ),
               IconButton(
-                  icon: const Icon(Icons.code),
-                  onPressed: () => _wrapSelection('`')),
+                icon: const Icon(Icons.code),
+                onPressed: () => _wrapSelection('`'),
+              ),
               IconButton(
-                  icon: const Icon(Icons.insert_link),
-                  onPressed: () {
-                    // Simplified link insertion
-                    _wrapSelection('[', '](url)');
-                  }),
+                icon: const Icon(Icons.insert_link),
+                onPressed: () {
+                  // Simplified link insertion
+                  _wrapSelection('[', '](url)');
+                },
+              ),
             ],
           ),
         ),
@@ -345,8 +375,10 @@ class _AddPostScreenState extends State<AddPostScreen> {
       children: [
         Row(
           children: [
-            const Text('Snippet',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              'Snippet',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             const Spacer(),
             DropdownButton<String>(
               value: _codeLang,
@@ -357,21 +389,22 @@ class _AddPostScreenState extends State<AddPostScreen> {
                   });
                 }
               },
-              items: <String>[
-                'javascript',
-                'typescript',
-                'python',
-                'java',
-                'csharp',
-                'sql',
-                'json',
-                'dart'
-              ].map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
+              items:
+                  <String>[
+                    'javascript',
+                    'typescript',
+                    'python',
+                    'java',
+                    'csharp',
+                    'sql',
+                    'json',
+                    'dart',
+                  ].map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
             ),
           ],
         ),
@@ -407,11 +440,15 @@ class _AddPostScreenState extends State<AddPostScreen> {
 
         // Display list of selected files (optional/visual confirmation)
         if (_selectedFiles.isNotEmpty)
-          ..._selectedFiles.map((file) => Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
-                child: FileListItem(
-                    file: file, onRemove: () => _removeFile(file)),
-              )),
+          ..._selectedFiles.map(
+            (file) => Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: FileListItem(
+                file: file,
+                onRemove: () => _removeFile(file),
+              ),
+            ),
+          ),
 
         if (_selectedFiles.isNotEmpty) const SizedBox(height: 16),
       ],
@@ -490,7 +527,11 @@ class FileUploadArea extends StatelessWidget {
   Widget build(BuildContext context) {
     // CustomPaint is used to draw the dashed border easily
     return CustomPaint(
-      painter: DashedRectPainter(color: Colors.blueGrey, strokeWidth: 2, gap: 5),
+      painter: DashedRectPainter(
+        color: Colors.blueGrey,
+        strokeWidth: 2,
+        gap: 5,
+      ),
       child: Container(
         height: 200,
         decoration: BoxDecoration(
@@ -520,10 +561,7 @@ class FileUploadArea extends StatelessWidget {
               ),
               const Text(
                 'Supported formats: JPG, PNG, PDF, DOC, MP4, MOV, AVI',
-                style: TextStyle(
-                  color: Colors.blueGrey,
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: Colors.blueGrey, fontSize: 12),
               ),
             ],
           ),
@@ -538,11 +576,7 @@ class FileListItem extends StatelessWidget {
   final PlatformFile file;
   final VoidCallback onRemove;
 
-  const FileListItem({
-    super.key,
-    required this.file,
-    required this.onRemove,
-  });
+  const FileListItem({super.key, required this.file, required this.onRemove});
 
   @override
   Widget build(BuildContext context) {
@@ -599,10 +633,12 @@ class DashedRectPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     Path path = Path();
-    path.addRRect(RRect.fromRectAndRadius(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      const Radius.circular(12),
-    ));
+    path.addRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(0, 0, size.width, size.height),
+        const Radius.circular(12),
+      ),
+    );
 
     Path dashedPath = Path();
     double distance = 0.0;

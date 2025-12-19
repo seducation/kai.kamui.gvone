@@ -68,15 +68,15 @@ class _SearchScreenState extends State<SearchScreen> {
       });
       // Handle error, maybe show a snackbar
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error fetching suggestions: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error fetching suggestions: $e')));
     }
   }
 
   void _submitSearch(String query) {
     if (query.isNotEmpty) {
-      context.go('/search/$query');
+      context.push('/search/$query');
     }
   }
 
@@ -89,9 +89,7 @@ class _SearchScreenState extends State<SearchScreen> {
           children: [
             _buildSearchBar(context),
             Divider(height: 1, color: theme.dividerColor),
-            Expanded(
-              child: _buildSuggestionsList(),
-            ),
+            Expanded(child: _buildSuggestionsList()),
           ],
         ),
       ),
@@ -105,13 +103,12 @@ class _SearchScreenState extends State<SearchScreen> {
       child: Row(
         children: [
           IconButton(
-            icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface.withAlpha(153)),
+            icon: Icon(
+              Icons.arrow_back,
+              color: theme.colorScheme.onSurface.withAlpha(153),
+            ),
             onPressed: () {
-              if (context.canPop()) {
-                context.pop();
-              } else {
-                context.go('/');
-              }
+              Navigator.maybePop(context);
             },
           ),
           const SizedBox(width: 8),
@@ -119,10 +116,16 @@ class _SearchScreenState extends State<SearchScreen> {
             child: TextField(
               controller: _searchController,
               autofocus: true,
-              style: TextStyle(fontSize: 18, color: theme.colorScheme.onSurface),
+              style: TextStyle(
+                fontSize: 18,
+                color: theme.colorScheme.onSurface,
+              ),
               decoration: InputDecoration(
                 hintText: "Search...",
-                hintStyle: TextStyle(color: theme.colorScheme.onSurface.withAlpha(153), fontSize: 18),
+                hintStyle: TextStyle(
+                  color: theme.colorScheme.onSurface.withAlpha(153),
+                  fontSize: 18,
+                ),
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.zero,
                 isDense: true,
@@ -164,7 +167,8 @@ class _SearchScreenState extends State<SearchScreen> {
 
     if (_searchController.text.isEmpty) {
       return const Center(
-          child: Text('Enter a search term to see suggestions.'));
+        child: Text('Enter a search term to see suggestions.'),
+      );
     }
 
     if (_suggestions.isEmpty) {

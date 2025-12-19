@@ -1,6 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:my_app/add_product.dart';
 import 'package:my_app/appwrite_service.dart';
 import 'package:my_app/auth_service.dart';
@@ -85,7 +84,8 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
       final profileImageId = _profile!.profileImageUrl;
       final bannerImageId = profileRow.data['bannerImageUrl'];
 
-      _fullProfileImageUrl = (profileImageId != null && profileImageId.isNotEmpty)
+      _fullProfileImageUrl =
+          (profileImageId != null && profileImageId.isNotEmpty)
           ? _appwriteService.getFileViewUrl(profileImageId)
           : null;
 
@@ -121,14 +121,7 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
   }
 
   List<String> _getTabsForProfile(Profile? profile) {
-    final baseTabs = [
-      "Home",
-      "Posts",
-      "Videos",
-      "Shorts",
-      "Live",
-      "Playlists",
-    ];
+    final baseTabs = ["Home", "Posts", "Videos", "Shorts", "Live", "Playlists"];
     if (profile?.type == 'business') {
       baseTabs.add("Products");
     }
@@ -189,17 +182,19 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
         _currentUserId != null && _currentUserId == _profile?.ownerId;
     final accountTypes = ['profile', 'channel', 'thread', 'business'];
     final showEditButton =
-        isCurrentUser && _profile != null && accountTypes.contains(_profile!.type);
+        isCurrentUser &&
+        _profile != null &&
+        accountTypes.contains(_profile!.type);
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: _isLoading || _tabController == null
           ? const Center(child: CircularProgressIndicator())
           : _profile == null
-              ? const Center(child: Text("Profile not found"))
-              : NestedScrollView(
-                  headerSliverBuilder:
-                      (BuildContext context, bool innerBoxIsScrolled) {
+          ? const Center(child: Text("Profile not found"))
+          : NestedScrollView(
+              headerSliverBuilder:
+                  (BuildContext context, bool innerBoxIsScrolled) {
                     return <Widget>[
                       SliverAppBar(
                         expandedHeight: 180.0,
@@ -207,35 +202,42 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
                         floating: false,
                         backgroundColor: Colors.white,
                         leading: IconButton(
-                          icon:
-                              const Icon(Icons.arrow_back, color: Colors.black),
-                          onPressed: () => context.pop(),
+                          icon: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.black,
+                          ),
+                          onPressed: () => Navigator.maybePop(context),
                         ),
                         actions: [
                           IconButton(
-                              icon: const Icon(Icons.cast, color: Colors.black),
-                              onPressed: () {}),
+                            icon: const Icon(Icons.cast, color: Colors.black),
+                            onPressed: () {},
+                          ),
                           IconButton(
-                              icon:
-                                  const Icon(Icons.search, color: Colors.black),
-                              onPressed: () {}),
+                            icon: const Icon(Icons.search, color: Colors.black),
+                            onPressed: () {},
+                          ),
                           IconButton(
-                              icon: const Icon(Icons.more_vert,
-                                  color: Colors.black),
-                              onPressed: () {}),
+                            icon: const Icon(
+                              Icons.more_vert,
+                              color: Colors.black,
+                            ),
+                            onPressed: () {},
+                          ),
                         ],
                         flexibleSpace: FlexibleSpaceBar(
-                          background: _fullBannerImageUrl != null &&
+                          background:
+                              _fullBannerImageUrl != null &&
                                   _fullBannerImageUrl!.isNotEmpty
                               ? CachedNetworkImage(
                                   imageUrl: _fullBannerImageUrl!,
                                   fit: BoxFit.cover,
                                   placeholder: (context, url) =>
                                       Shimmer.fromColors(
-                                    baseColor: Colors.grey[300]!,
-                                    highlightColor: Colors.grey[100]!,
-                                    child: Container(color: Colors.white),
-                                  ),
+                                        baseColor: Colors.grey[300]!,
+                                        highlightColor: Colors.grey[100]!,
+                                        child: Container(color: Colors.white),
+                                      ),
                                   errorWidget: (context, url, error) =>
                                       Container(color: Colors.grey[200]),
                                 )
@@ -253,16 +255,21 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
                                   CircleAvatar(
                                     radius: 36,
                                     backgroundColor: Colors.grey[300],
-                                    backgroundImage: _fullProfileImageUrl !=
-                                            null &&
+                                    backgroundImage:
+                                        _fullProfileImageUrl != null &&
                                             _fullProfileImageUrl!.isNotEmpty
                                         ? CachedNetworkImageProvider(
-                                            _fullProfileImageUrl!)
+                                            _fullProfileImageUrl!,
+                                          )
                                         : null,
-                                    child: _fullProfileImageUrl == null ||
+                                    child:
+                                        _fullProfileImageUrl == null ||
                                             _fullProfileImageUrl!.isEmpty
-                                        ? Icon(Icons.person,
-                                            size: 40, color: Colors.grey[600])
+                                        ? Icon(
+                                            Icons.person,
+                                            size: 40,
+                                            color: Colors.grey[600],
+                                          )
                                         : null,
                                   ),
                                   const SizedBox(width: 12),
@@ -283,8 +290,9 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
                                         Text(
                                           "$_followersCount followers",
                                           style: const TextStyle(
-                                              color: Colors.black54,
-                                              fontSize: 12),
+                                            color: Colors.black54,
+                                            fontSize: 12,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -299,7 +307,9 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
                                   child: Text(
                                     _profile!.bio!,
                                     style: const TextStyle(
-                                        color: Colors.black87, fontSize: 13),
+                                      color: Colors.black87,
+                                      fontSize: 13,
+                                    ),
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -313,15 +323,20 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
                                             child: ElevatedButton(
                                               onPressed: _toggleFollow,
                                               style: ElevatedButton.styleFrom(
-                                                backgroundColor: Colors.grey[200],
+                                                backgroundColor:
+                                                    Colors.grey[200],
                                                 foregroundColor: Colors.black,
                                                 shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(24)),
+                                                  borderRadius:
+                                                      BorderRadius.circular(24),
+                                                ),
                                               ),
-                                              child: const Text("Unfollow",
-                                                  style: TextStyle(
-                                                      fontWeight: FontWeight.bold)),
+                                              child: const Text(
+                                                "Unfollow",
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
                                             ),
                                           ),
                                           const SizedBox(width: 8),
@@ -333,10 +348,13 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
                                               backgroundColor: Colors.grey[200],
                                               foregroundColor: Colors.black,
                                               shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(24)),
+                                                borderRadius:
+                                                    BorderRadius.circular(24),
+                                              ),
                                             ),
-                                            child: const Icon(Icons.arrow_drop_down),
+                                            child: const Icon(
+                                              Icons.arrow_drop_down,
+                                            ),
                                           ),
                                         ],
                                       )
@@ -348,12 +366,16 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
                                             backgroundColor: Colors.black,
                                             foregroundColor: Colors.white,
                                             shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(24)),
+                                              borderRadius:
+                                                  BorderRadius.circular(24),
+                                            ),
                                           ),
-                                          child: const Text("Follow",
-                                              style: TextStyle(
-                                                  fontWeight: FontWeight.bold)),
+                                          child: const Text(
+                                            "Follow",
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
                                         ),
                                       ),
                             ],
@@ -370,7 +392,9 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
                             indicatorColor: Colors.black,
                             dividerColor: Colors.transparent,
                             labelStyle: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                             tabs: _tabs
                                 .map((String name) => Tab(text: name))
                                 .toList(),
@@ -380,11 +404,8 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
                       ),
                     ];
                   },
-                  body: TabBarView(
-                    controller: _tabController,
-                    children: _tabViews,
-                  ),
-                ),
+              body: TabBarView(controller: _tabController, children: _tabViews),
+            ),
       floatingActionButton: showEditButton
           ? Row(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -398,7 +419,8 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => AddProductScreen(profileId: widget.profileId),
+                            builder: (context) =>
+                                AddProductScreen(profileId: widget.profileId),
                           ),
                         );
                       },
@@ -451,11 +473,11 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Container(
-      color: Colors.white,
-      child: _tabBar,
-    );
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return Container(color: Colors.white, child: _tabBar);
   }
 
   @override

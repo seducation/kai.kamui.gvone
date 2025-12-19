@@ -13,7 +13,7 @@ class SettingsScreen extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            context.go('/profile');
+            Navigator.maybePop(context);
           },
         ),
       ),
@@ -39,7 +39,7 @@ class SettingsScreen extends StatelessWidget {
                       leading: const Icon(Icons.shield_outlined),
                       title: const Text('App Permission'),
                       trailing: const Icon(Icons.arrow_forward_ios),
-                      onTap: () => context.go('/setting_app_permission'),
+                      onTap: () => context.push('/setting_app_permission'),
                     ),
                     ListTile(
                       leading: const Icon(Icons.dark_mode_outlined),
@@ -59,10 +59,13 @@ class SettingsScreen extends StatelessWidget {
                                       ListTile(
                                         title: const Text('Light'),
                                         onTap: () {
-                                          themeModel.themeMode = ThemeMode.light;
+                                          themeModel.themeMode =
+                                              ThemeMode.light;
                                           Navigator.of(context).pop();
                                         },
-                                        trailing: themeModel.themeMode == ThemeMode.light
+                                        trailing:
+                                            themeModel.themeMode ==
+                                                ThemeMode.light
                                             ? const Icon(Icons.check)
                                             : null,
                                       ),
@@ -72,17 +75,22 @@ class SettingsScreen extends StatelessWidget {
                                           themeModel.themeMode = ThemeMode.dark;
                                           Navigator.of(context).pop();
                                         },
-                                        trailing: themeModel.themeMode == ThemeMode.dark
+                                        trailing:
+                                            themeModel.themeMode ==
+                                                ThemeMode.dark
                                             ? const Icon(Icons.check)
                                             : null,
                                       ),
                                       ListTile(
                                         title: const Text('System'),
                                         onTap: () {
-                                          themeModel.themeMode = ThemeMode.system;
+                                          themeModel.themeMode =
+                                              ThemeMode.system;
                                           Navigator.of(context).pop();
                                         },
-                                        trailing: themeModel.themeMode == ThemeMode.system
+                                        trailing:
+                                            themeModel.themeMode ==
+                                                ThemeMode.system
                                             ? const Icon(Icons.check)
                                             : null,
                                       ),
@@ -99,19 +107,19 @@ class SettingsScreen extends StatelessWidget {
                       leading: const Icon(Icons.color_lens_outlined),
                       title: const Text('Theme'),
                       trailing: const Icon(Icons.arrow_forward_ios),
-                      onTap: () => context.go('/setting_theme'),
+                      onTap: () => context.push('/setting_theme'),
                     ),
                     ListTile(
                       leading: const Icon(Icons.location_on_outlined),
                       title: const Text('Location'),
                       trailing: const Icon(Icons.arrow_forward_ios),
-                      onTap: () => context.go('/setting_location'),
+                      onTap: () => context.push('/setting_location'),
                     ),
                     ListTile(
                       leading: const Icon(Icons.online_prediction_outlined),
                       title: const Text('Active Status'),
                       trailing: const Icon(Icons.arrow_forward_ios),
-                      onTap: () => context.go('/setting_active_status'),
+                      onTap: () => context.push('/setting_active_status'),
                     ),
                   ],
                 ),
@@ -128,25 +136,25 @@ class SettingsScreen extends StatelessWidget {
                       leading: const Icon(Icons.person_outline),
                       title: const Text('Personal Info'),
                       trailing: const Icon(Icons.arrow_forward_ios),
-                      onTap: () => context.go('/setting_personal_info'),
+                      onTap: () => context.push('/setting_personal_info'),
                     ),
                     ListTile(
                       leading: const Icon(Icons.privacy_tip_outlined),
                       title: const Text('Privacy'),
                       trailing: const Icon(Icons.arrow_forward_ios),
-                      onTap: () => context.go('/setting_privacy'),
+                      onTap: () => context.push('/setting_privacy'),
                     ),
                     ListTile(
                       leading: const Icon(Icons.safety_check_outlined),
                       title: const Text('Safety'),
                       trailing: const Icon(Icons.arrow_forward_ios),
-                      onTap: () => context.go('/setting_safety'),
+                      onTap: () => context.push('/setting_safety'),
                     ),
                     ListTile(
                       leading: const Icon(Icons.delete_outline),
                       title: const Text('Delete'),
                       trailing: const Icon(Icons.arrow_forward_ios),
-                      onTap: () => context.go('/setting_delete'),
+                      onTap: () => context.push('/setting_delete'),
                     ),
                   ],
                 ),
@@ -163,13 +171,13 @@ class SettingsScreen extends StatelessWidget {
                       leading: const Icon(Icons.support_agent_outlined),
                       title: const Text('Support'),
                       trailing: const Icon(Icons.arrow_forward_ios),
-                      onTap: () => context.go('/setting_support'),
+                      onTap: () => context.push('/setting_support'),
                     ),
                     ListTile(
                       leading: const Icon(Icons.emergency_outlined),
                       title: const Text('Emergency'),
                       trailing: const Icon(Icons.arrow_forward_ios),
-                      onTap: () => context.go('/setting_emergency'),
+                      onTap: () => context.push('/setting_emergency'),
                     ),
                   ],
                 ),

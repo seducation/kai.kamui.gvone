@@ -14,7 +14,9 @@ class SrvFeatureTabscreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final featureResults = searchResults
-        .where((result) => result['type'] == 'post' || result['type'] == 'profile')
+        .where(
+          (result) => result['type'] == 'post' || result['type'] == 'profile',
+        )
         .toList();
 
     if (featureResults.isEmpty) {
@@ -79,7 +81,9 @@ class SrvFeatureTabscreen extends StatelessWidget {
 
   Future<Profile> _getAuthorProfile(BuildContext context, String profileId) {
     final appwriteService = context.read<AppwriteService>();
-    return appwriteService.getProfile(profileId).then((row) => Profile.fromRow(row));
+    return appwriteService
+        .getProfile(profileId)
+        .then((row) => Profile.fromRow(row));
   }
 
   Widget _buildProfileResult(BuildContext context, Map<String, dynamic> data) {
@@ -87,18 +91,19 @@ class SrvFeatureTabscreen extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundImage: data['profileImageUrl'] != null &&
+          backgroundImage:
+              data['profileImageUrl'] != null &&
                   data['profileImageUrl'].isNotEmpty
               ? NetworkImage(data['profileImageUrl'])
               : null,
-          child: data['profileImageUrl'] == null ||
-                  data['profileImageUrl'].isEmpty
+          child:
+              data['profileImageUrl'] == null || data['profileImageUrl'].isEmpty
               ? const Icon(Icons.person)
               : null,
         ),
         title: Text(data['name'] ?? 'No name'),
         subtitle: Text(data['bio'] ?? ''),
-        onTap: () => context.go('/profile/${data['\$id']}'),
+        onTap: () => context.push('/profile/${data['\$id']}'),
       ),
     );
   }

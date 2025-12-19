@@ -14,9 +14,7 @@ class _SettingSafetyScreenState extends State<SettingSafetyScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Safety'),
-      ),
+      appBar: AppBar(title: const Text('Safety')),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8.0),
         children: [
@@ -26,14 +24,15 @@ class _SettingSafetyScreenState extends State<SettingSafetyScreen> {
             subtitle: const Text('Manage your emergency contacts and settings'),
             trailing: const Icon(Icons.arrow_forward_ios),
             onTap: () {
-              context.go('/setting_emergency');
+              context.push('/setting_emergency');
             },
           ),
           const Divider(),
           SwitchListTile(
             title: const Text('Sensitive Content Filter'),
             subtitle: const Text(
-                'Blur photos and videos that may contain sensitive content'),
+              'Blur photos and videos that may contain sensitive content',
+            ),
             value: _sensitiveContentFilter,
             onChanged: (bool value) {
               setState(() {

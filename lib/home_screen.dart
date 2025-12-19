@@ -235,12 +235,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               actions: [
                 IconButton(
                   icon: const Icon(Icons.search),
-                  onPressed: () => context.go('/search'),
+                  onPressed: () => context.push('/search'),
                 ),
                 IconButton(
                   icon: const Icon(Icons.add),
                   onPressed: () {
-                    context.go('/add_post');
+                    context.push('/add_post');
                   },
                 ),
               ],
@@ -258,7 +258,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 IconButton(
                   icon: const Icon(Icons.menu),
                   onPressed: () {
-                    context.go('/profile');
+                    context.push('/profile');
                   },
                 ),
                 IconButton(
@@ -273,12 +273,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             actions: [
               IconButton(
                 icon: const Icon(Icons.search),
-                onPressed: () => context.go('/bottom_nav_search'),
+                onPressed: () => context.push('/bottom_nav_search'),
               ),
               IconButton(
                 icon: const Icon(Icons.add),
                 onPressed: () {
-                  context.go('/add_post');
+                  context.push('/add_post');
                 },
               ),
             ],

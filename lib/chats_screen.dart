@@ -53,7 +53,9 @@ class _ChatsScreenState extends State<ChatsScreen> {
 
   void _addNewChat(ChatModel newChat) {
     setState(() {
-      final index = _chatItems.indexWhere((chat) => chat.userId == newChat.userId);
+      final index = _chatItems.indexWhere(
+        (chat) => chat.userId == newChat.userId,
+      );
       if (index != -1) {
         _chatItems[index] = newChat;
       } else {
@@ -84,17 +86,11 @@ class _ChatsScreenState extends State<ChatsScreen> {
               ),
             ],
           ),
-          title: const Text("MyApps"),
+          title: const Text("gvone"),
           centerTitle: true,
           actions: [
-            IconButton(
-              icon: const Icon(Icons.add),
-              onPressed: () {},
-            ),
-            IconButton(
-              icon: const Icon(Icons.more_vert),
-              onPressed: () {},
-            ),
+            IconButton(icon: const Icon(Icons.add), onPressed: () {}),
+            IconButton(icon: const Icon(Icons.more_vert), onPressed: () {}),
           ],
           bottom: const TabBar(
             tabs: [
@@ -120,7 +116,8 @@ class _ChatsScreenState extends State<ChatsScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => SelectContactScreen(onNewChat: _addNewChat),
+                builder: (context) =>
+                    SelectContactScreen(onNewChat: _addNewChat),
               ),
             );
           },

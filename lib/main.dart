@@ -163,23 +163,20 @@ GoRouter _createRouter(AuthService authService) {
           profileId: state.pathParameters['id']!,
         ),
       ),
-       GoRoute(
+      GoRoute(
         path: '/outgoing_call/:roomName',
-        builder: (context, state) => OutgoingCallScreen(
-          roomName: state.pathParameters['roomName']!,
-        ),
+        builder: (context, state) =>
+            OutgoingCallScreen(roomName: state.pathParameters['roomName']!),
       ),
       GoRoute(
         path: '/incoming_call/:roomName',
-        builder: (context, state) => IncomingCallScreen(
-          roomName: state.pathParameters['roomName']!,
-        ),
+        builder: (context, state) =>
+            IncomingCallScreen(roomName: state.pathParameters['roomName']!),
       ),
       GoRoute(
         path: '/answering_call/:roomName',
-        builder: (context, state) => AnsweringScreen(
-          roomName: state.pathParameters['roomName']!,
-        ),
+        builder: (context, state) =>
+            AnsweringScreen(roomName: state.pathParameters['roomName']!),
       ),
       GoRoute(
         path: '/settings',
@@ -272,20 +269,34 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: _screens[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chats'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
-          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Community'),
-          BottomNavigationBarItem(icon: Icon(Icons.camera), label: 'Lens'),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.amber[800],
-        unselectedItemColor: Colors.grey,
-        onTap: _onItemTapped,
+    return PopScope(
+      canPop: _selectedIndex == 0,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (_selectedIndex != 0) {
+          setState(() {
+            _selectedIndex = 0;
+          });
+        }
+      },
+      child: Scaffold(
+        body: _screens[_selectedIndex],
+        bottomNavigationBar: BottomNavigationBar(
+          items: const <BottomNavigationBarItem>[
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+            BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chats'),
+            BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.people),
+              label: 'Community',
+            ),
+            BottomNavigationBarItem(icon: Icon(Icons.camera), label: 'Lens'),
+          ],
+          currentIndex: _selectedIndex,
+          selectedItemColor: Colors.amber[800],
+          unselectedItemColor: Colors.grey,
+          onTap: _onItemTapped,
+        ),
       ),
     );
   }

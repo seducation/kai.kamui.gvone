@@ -24,7 +24,8 @@ class ResultsSearches extends StatefulWidget {
   State<ResultsSearches> createState() => _ResultsSearchesState();
 }
 
-class _ResultsSearchesState extends State<ResultsSearches> with TickerProviderStateMixin {
+class _ResultsSearchesState extends State<ResultsSearches>
+    with TickerProviderStateMixin {
   late TextEditingController _searchController;
   late TabController _mainTabController;
   late final SearchService _searchService;
@@ -50,7 +51,11 @@ class _ResultsSearchesState extends State<ResultsSearches> with TickerProviderSt
   void initState() {
     super.initState();
     _searchController = TextEditingController(text: widget.query);
-    _mainTabController = TabController(length: _tabs.length, vsync: this, initialIndex: 1);
+    _mainTabController = TabController(
+      length: _tabs.length,
+      vsync: this,
+      initialIndex: 1,
+    );
     _searchService = SearchService(context.read<AppwriteService>());
     _performSearch();
   }
@@ -83,7 +88,7 @@ class _ResultsSearchesState extends State<ResultsSearches> with TickerProviderSt
 
   void _updateSearchQuery(String newQuery) {
     if (newQuery.isNotEmpty) {
-      context.go('/search/$newQuery');
+      context.push('/search/$newQuery');
     }
   }
 
@@ -100,9 +105,7 @@ class _ResultsSearchesState extends State<ResultsSearches> with TickerProviderSt
         title: TextField(
           controller: _searchController,
           autofocus: true,
-          decoration: const InputDecoration.collapsed(
-            hintText: 'Search',
-          ),
+          decoration: const InputDecoration.collapsed(hintText: 'Search'),
           onSubmitted: _updateSearchQuery,
         ),
         actions: [
@@ -110,10 +113,7 @@ class _ResultsSearchesState extends State<ResultsSearches> with TickerProviderSt
             icon: const Icon(Icons.search),
             onPressed: () => _updateSearchQuery(_searchController.text),
           ),
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {},
-          ),
+          IconButton(icon: const Icon(Icons.add), onPressed: () {}),
         ],
         bottom: TabBar(
           controller: _mainTabController,

@@ -60,13 +60,13 @@ class _AddToStoryScreenState extends State<AddToStoryScreen> {
 
       if (mounted) {
         final storyDataEncoded = jsonEncode(storyData);
-        context.go('/where_to_post_story?storyData=$storyDataEncoded');
+        context.push('/where_to_post_story?storyData=$storyDataEncoded');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to upload image: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to upload image: $e')));
       }
     } finally {
       if (mounted) {
