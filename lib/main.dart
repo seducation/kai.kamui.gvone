@@ -38,6 +38,7 @@ import 'setting_privacy_screen.dart';
 import 'setting_safety_screen.dart';
 import 'setting_support_screen.dart';
 import 'about_searches_widgets/about_searches_widget.dart';
+import 'widgets/main_bottom_nav_bar.dart';
 
 List<CameraDescription> cameras = []; // Global cameras list
 
@@ -281,20 +282,8 @@ class _MainScreenState extends State<MainScreen> {
       },
       child: Scaffold(
         body: _screens[_selectedIndex],
-        bottomNavigationBar: BottomNavigationBar(
-          items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chats'),
-            BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.people),
-              label: 'Community',
-            ),
-            BottomNavigationBarItem(icon: Icon(Icons.camera), label: 'Lens'),
-          ],
+        bottomNavigationBar: CustomBottomNavBar(
           currentIndex: _selectedIndex,
-          selectedItemColor: Colors.amber[800],
-          unselectedItemColor: Colors.grey,
           onTap: _onItemTapped,
         ),
       ),
