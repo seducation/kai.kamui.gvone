@@ -22,7 +22,7 @@ class MasterListPane extends StatelessWidget {
           selected: isSelected,
           selectedTileColor: Theme.of(
             context,
-          ).colorScheme.primaryContainer.withOpacity(0.3),
+          ).colorScheme.primaryContainer.withValues(alpha: 0.3),
           leading: CircleAvatar(child: Text('${index + 1}')),
           title: Text(items[index]),
           subtitle: const Text('Tap to view details'),

@@ -3,7 +3,6 @@ import 'nav_rail_sidebar.dart';
 import 'bottom_nav_pane.dart';
 import 'extra_info_pane.dart';
 import 'master_list_pane.dart';
-import 'detail_view_pane.dart';
 
 /// A robust adaptive shell for the application.
 class AdaptiveScaffold extends StatelessWidget {

@@ -6,7 +6,9 @@ class ExtraInfoPane extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+      color: Theme.of(
+        context,
+      ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
       padding: const EdgeInsets.all(24.0),
       child: Center(
         child: Column(
