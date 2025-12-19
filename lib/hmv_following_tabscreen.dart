@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/appwrite_service.dart';
+import 'package:my_app/model/post.dart';
 import 'package:provider/provider.dart';
 import 'package:appwrite/appwrite.dart';
 
-// Import the data models and widgets from the features tab
 import './hmv_features_tabscreen.dart';
 import 'model/profile.dart';
 
@@ -16,7 +16,6 @@ class HMVFollowingTabscreen extends StatefulWidget {
 
 class _HMVFollowingTabscreenState extends State<HMVFollowingTabscreen> {
   late AppwriteService appwriteService;
-  // Use the Post model from the features tab
   List<Post>? _posts;
   bool _isLoading = true;
   String? _error;
@@ -39,7 +38,6 @@ class _HMVFollowingTabscreenState extends State<HMVFollowingTabscreen> {
         return;
       }
 
-      // Get the profiles of the users that the current user is following.
       final followingProfiles = await appwriteService.getFollowingProfiles(userId: user.$id);
       if (followingProfiles.rows.isEmpty) {
         setState(() {
@@ -49,13 +47,10 @@ class _HMVFollowingTabscreenState extends State<HMVFollowingTabscreen> {
         return;
       }
 
-      // Extract the profile IDs from the profiles.
       final profileIds = followingProfiles.rows.map((profile) => profile.$id).toList();
 
-      // Fetch the posts from those profiles.
       final postsResponse = await appwriteService.getPostsFromUsers(profileIds);
 
-      // Fetch all profiles to map authors correctly
       final profilesResponse = await appwriteService.getProfiles();
       final profilesMap = {for (var p in profilesResponse.rows) p.$id: Profile.fromMap(p.data, p.$id)};
 
@@ -64,7 +59,6 @@ class _HMVFollowingTabscreenState extends State<HMVFollowingTabscreen> {
         final author = profilesMap[profileId];
 
         if (author == null) {
-          // If for some reason the author profile is not found, skip this post.
           return null;
         }
 
@@ -76,7 +70,6 @@ class _HMVFollowingTabscreenState extends State<HMVFollowingTabscreen> {
           mediaUrl = appwriteService.getFileViewUrl(fileIds.first);
         }
 
-        // Create the Post object, similar to hmv_features_tabscreen.dart
         return Post(
           id: row.$id,
           author: author,
@@ -85,8 +78,7 @@ class _HMVFollowingTabscreenState extends State<HMVFollowingTabscreen> {
           contentText: row.data['caption'] as String? ?? '',
           type: type,
           mediaUrl: mediaUrl,
-          linkUrl: row.data['linkUrl'] as String?, // Added this line
-          // Appwrite posts don't have stats yet, so we use defaults.
+          linkUrl: row.data['linkUrl'] as String?,
           stats: PostStats(
             likes: row.data['likes'] ?? 0,
             comments: row.data['comments'] ?? 0,
@@ -133,13 +125,11 @@ class _HMVFollowingTabscreenState extends State<HMVFollowingTabscreen> {
       );
     }
 
-    // Use the same UI structure as the features tab
     return ListView.separated(
       itemCount: _posts!.length,
       separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFE0E0E0)),
       itemBuilder: (context, index) {
         final post = _posts![index];
-        // Reuse the PostWidget
         return PostWidget(post: post, allPosts: _posts!);
       },
     );

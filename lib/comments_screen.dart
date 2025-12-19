@@ -1,7 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:my_app/appwrite_service.dart';
-import 'package:my_app/hmv_features_tabscreen.dart';
+import 'package:my_app/model/post.dart';
 import 'package:my_app/model/profile.dart';
 import 'package:provider/provider.dart';
 
@@ -141,6 +141,9 @@ class _CommentsScreenState extends State<CommentsScreen> {
         _replyingToCommentId = null;
       });
       await _fetchComments(); // Refresh comments
+      if(mounted){
+        Navigator.pop(context, true);
+      }
     } catch (e) {
       if (!mounted) return;
       debugPrint('Error adding comment: $e');
@@ -155,6 +158,9 @@ class _CommentsScreenState extends State<CommentsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Comments'),
+        leading: BackButton(
+          onPressed: () => Navigator.pop(context, true),
+        ),
       ),
       body: Column(
         children: [
@@ -244,9 +250,9 @@ class _CommentsScreenState extends State<CommentsScreen> {
           if (_replyingToCommentId != null)
             Row(
               children: [
-                Text('Replying to comment...'),
+                const Text('Replying to comment...'),
                 IconButton(
-                  icon: Icon(Icons.close),
+                  icon: const Icon(Icons.close),
                   onPressed: () {
                     setState(() {
                       _replyingToCommentId = null;

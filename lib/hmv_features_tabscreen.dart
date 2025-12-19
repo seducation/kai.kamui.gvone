@@ -3,59 +3,13 @@ import 'package:my_app/appwrite_service.dart';
 import 'package:provider/provider.dart';
 import './profile_page.dart';
 import 'dart:math';
+import 'package:my_app/model/post.dart';
 import 'model/profile.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'comments_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
-// ---------------------------------------------------------------------------
-// 1. DATA MODELS ( The "Base" Structure )
-// ---------------------------------------------------------------------------
-
-enum PostType { text, image, linkPreview, video }
-
-class PostStats {
-  int likes;
-  int comments;
-  final int shares;
-  final int views;
-
-  PostStats({this.likes = 0, this.comments = 0, this.shares = 0, this.views = 0});
-}
-
-class Post {
-  final String id;
-  final Profile author;
-  final DateTime timestamp;
-  final String contentText;
-  final PostType type;
-  final String? mediaUrl; // Image URL or Link Preview Image
-  final String? linkUrl;  // For Link Previews
-  final String? linkTitle; // For Link Previews
-  final PostStats stats;
-  double score;
-  bool isLiked; // To track liked state locally
-  bool isSaved; // To track saved state locally
-
-
-  Post({
-    required this.id,
-    required this.author,
-    required this.timestamp,
-    required this.contentText,
-    this.type = PostType.text,
-    this.mediaUrl,
-    this.linkUrl,
-    this.linkTitle,
-    required this.stats,
-    this.score = 0.0,
-    this.isLiked = false, // Default to not liked
-    this.isSaved = false, // Default to not saved
-  });
-}
-
-// ... (MockData remains the same)
 
 double calculateScore(Post post) {
   final hoursSincePosted = DateTime.now().difference(post.timestamp).inHours;
@@ -125,15 +79,19 @@ class _HMVFeaturesTabscreenState extends State<HMVFeaturesTabscreen> {
         );
       }).whereType<Post>().toList();
 
-      setState(() {
-        _posts = posts;
-        _isLoading = false;
-      });
+      if(mounted){
+        setState(() {
+          _posts = posts;
+          _isLoading = false;
+        });
+      }
       _rankPosts();
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
+       if(mounted){
+        setState(() {
+          _isLoading = false;
+        });
+      }
       // Handle error
     }
   }
@@ -339,10 +297,12 @@ class _PostWidgetState extends State<PostWidget> {
   Future<void> _initializeState() async {
     _prefs = await SharedPreferences.getInstance();
     _fetchCommentCount();
-    setState(() {
-      _isLiked = _prefs?.getBool(widget.post.id) ?? false;
-      _isSaved = _prefs?.getBool('saved_${widget.post.id}') ?? false;
-    });
+    if(mounted){
+      setState(() {
+        _isLiked = _prefs?.getBool(widget.post.id) ?? false;
+        _isSaved = _prefs?.getBool('saved_${widget.post.id}') ?? false;
+      });
+    }
   }
 
   Future<void> _fetchCommentCount() async {
@@ -386,21 +346,23 @@ class _PostWidgetState extends State<PostWidget> {
     final newLikedState = !_isLiked;
     final newLikeCount = newLikedState ? _likeCount + 1 : _likeCount - 1;
 
-    setState(() {
-      _isLiked = newLikedState;
-      _likeCount = newLikeCount;
-    });
+    if(mounted){
+      setState(() {
+        _isLiked = newLikedState;
+        _likeCount = newLikeCount;
+      });
+    }
 
     try {
       await _appwriteService.updatePostLikes(widget.post.id, newLikeCount, widget.post.timestamp.toIso8601String());
       await _prefs!.setBool(widget.post.id, newLikedState);
     } catch (e) {
       // Revert the state if the update fails
-      setState(() {
-        _isLiked = !newLikedState;
-        _likeCount = _isLiked ? newLikeCount + 1 : newLikeCount -1;
-      });
-      if (mounted) {
+      if(mounted){
+        setState(() {
+          _isLiked = !newLikedState;
+          _likeCount = _isLiked ? newLikeCount + 1 : newLikeCount -1;
+        });
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Error: $e'),
         ));
@@ -436,9 +398,11 @@ class _PostWidgetState extends State<PostWidget> {
     final profileId = userProfiles.first.$id;
     final newSavedState = !_isSaved;
 
-    setState(() {
-      _isSaved = newSavedState;
-    });
+    if(mounted){
+      setState(() {
+        _isSaved = newSavedState;
+      });
+    }
 
     try {
       if (newSavedState) {
@@ -449,10 +413,10 @@ class _PostWidgetState extends State<PostWidget> {
       await _prefs!.setBool('saved_${widget.post.id}', newSavedState);
     } catch (e) {
       // Revert the state if the update fails
-      setState(() {
-        _isSaved = !newSavedState;
-      });
-      if (mounted) {
+      if(mounted){
+        setState(() {
+          _isSaved = !newSavedState;
+        });
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Failed to update saved status. Please try again.'),
         ));
