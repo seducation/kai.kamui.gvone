@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:appwrite/appwrite.dart';
 import 'package:my_app/appwrite_service.dart';
 import 'package:my_app/widgets/edit_profile_fab.dart';
 import 'package:provider/provider.dart';
@@ -26,6 +27,7 @@ class _CreateRowDialogState extends State<CreateRowDialog> {
   File? _bannerImage;
 
   bool _createMore = false;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -44,14 +46,13 @@ class _CreateRowDialogState extends State<CreateRowDialog> {
       sourcePath: pickedFile.path,
       uiSettings: [
         AndroidUiSettings(
-            toolbarTitle: 'Cropper',
-            toolbarColor: Colors.deepOrange,
-            toolbarWidgetColor: Colors.white,
-            initAspectRatio: CropAspectRatioPreset.original,
-            lockAspectRatio: false),
-        IOSUiSettings(
-          title: 'Cropper',
+          toolbarTitle: 'Cropper',
+          toolbarColor: Colors.deepOrange,
+          toolbarWidgetColor: Colors.white,
+          initAspectRatio: CropAspectRatioPreset.original,
+          lockAspectRatio: false,
         ),
+        IOSUiSettings(title: 'Cropper'),
       ],
     );
 
@@ -60,29 +61,57 @@ class _CreateRowDialogState extends State<CreateRowDialog> {
 
   Future<void> _createProfile() async {
     if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
+      });
       try {
-        final appwriteService =
-            Provider.of<AppwriteService>(context, listen: false);
+        final appwriteService = Provider.of<AppwriteService>(
+          context,
+          listen: false,
+        );
         final user = await appwriteService.getUser();
 
         if (user == null) {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-                content: Text('You must be logged in to create a profile.')),
+              content: Text('You must be logged in to create a profile.'),
+            ),
           );
           return;
         }
 
+        // Pre-check: See if a profile with the User's ID already exists
+        try {
+          await appwriteService.getProfile(user.$id);
+          // If the call succeeds, it means a profile already exists
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('A profile already exists for this account.'),
+            ),
+          );
+          return;
+        } catch (e) {
+          // If we get a 404, we can proceed to create
+          if (e is! AppwriteException || e.code != 404) {
+            // Some other error occurred during pre-check
+            rethrow;
+          }
+        }
+
         if (_selectedType == 'profile') {
-          final existingProfiles =
-              await appwriteService.getUserProfiles(ownerId: user.$id);
-          if (existingProfiles.rows
-              .any((row) => row.data['type'] == 'profile')) {
+          final existingProfiles = await appwriteService.getUserProfiles(
+            ownerId: user.$id,
+          );
+          if (existingProfiles.rows.any(
+            (row) => row.data['type'] == 'profile',
+          )) {
             if (!mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                  content: Text('You can only create one main profile.')),
+                content: Text('You can only create one main profile.'),
+              ),
             );
             return;
           }
@@ -118,9 +147,9 @@ class _CreateRowDialogState extends State<CreateRowDialog> {
 
         if (!mounted) return;
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Profile Created!")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Profile Created!")));
 
         if (!_createMore) {
           Navigator.of(context).pop();
@@ -139,9 +168,15 @@ class _CreateRowDialogState extends State<CreateRowDialog> {
         }
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to create profile: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to create profile: $e')));
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     }
   }
@@ -157,7 +192,8 @@ class _CreateRowDialogState extends State<CreateRowDialog> {
       child: Container(
         width: 600, // Max width for tablet/desktop
         constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.9),
+          maxHeight: MediaQuery.of(context).size.height * 0.9,
+        ),
         child: Form(
           key: _formKey,
           child: Column(
@@ -165,13 +201,18 @@ class _CreateRowDialogState extends State<CreateRowDialog> {
             children: [
               // --- Header Section ---
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       "Create Profile",
-                      style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     IconButton(
                       icon: const Icon(Icons.close),
@@ -193,7 +234,9 @@ class _CreateRowDialogState extends State<CreateRowDialog> {
                       ChannelHeader(
                         handleController: _handleController,
                         onBannerTap: () async {
-                          final image = await _pickAndCropImage(ImageSource.gallery);
+                          final image = await _pickAndCropImage(
+                            ImageSource.gallery,
+                          );
                           if (image != null) {
                             setState(() {
                               _bannerImage = image;
@@ -201,7 +244,9 @@ class _CreateRowDialogState extends State<CreateRowDialog> {
                           }
                         },
                         onProfileTap: () async {
-                          final image = await _pickAndCropImage(ImageSource.gallery);
+                          final image = await _pickAndCropImage(
+                            ImageSource.gallery,
+                          );
                           if (image != null) {
                             setState(() {
                               _profileImage = image;
@@ -222,7 +267,12 @@ class _CreateRowDialogState extends State<CreateRowDialog> {
                       CustomDropdown(
                         label: "Type",
                         value: _selectedType,
-                        items: const ["profile", "channel", "thread", "business"],
+                        items: const [
+                          "profile",
+                          "channel",
+                          "thread",
+                          "business",
+                        ],
                         onChanged: (newValue) {
                           setState(() {
                             _selectedType = newValue!;
@@ -240,7 +290,7 @@ class _CreateRowDialogState extends State<CreateRowDialog> {
                         icon: Icons.description,
                       ),
                       const SizedBox(height: 24),
-                       CustomTextField(
+                      CustomTextField(
                         controller: _locationController,
                         label: "Location",
                         hintText: "Enter your location",
@@ -267,8 +317,10 @@ class _CreateRowDialogState extends State<CreateRowDialog> {
                           onChanged: (val) => setState(() => _createMore = val),
                         ),
                         const SizedBox(width: 8),
-                        const Text("Create more",
-                            style: TextStyle(fontSize: 13)),
+                        const Text(
+                          "Create more",
+                          style: TextStyle(fontSize: 13),
+                        ),
                       ],
                     ),
                     const Spacer(),
@@ -282,12 +334,21 @@ class _CreateRowDialogState extends State<CreateRowDialog> {
 
                     // Create Button
                     ElevatedButton(
-                      onPressed: _createProfile,
-                       style: ElevatedButton.styleFrom(
+                      onPressed: _isLoading ? null : _createProfile,
+                      style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
                         foregroundColor: Colors.white,
                       ),
-                      child: const Text("Create"),
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text("Create"),
                     ),
                   ],
                 ),

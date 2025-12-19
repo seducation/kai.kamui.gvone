@@ -55,8 +55,11 @@ class AppwriteService {
     }
   }
 
-  Future<models.User> signUp(
-      {required String email, required String password, required String name}) async {
+  Future<models.User> signUp({
+    required String email,
+    required String password,
+    required String name,
+  }) async {
     try {
       final user = await _account.create(
         userId: ID.unique(),
@@ -70,11 +73,15 @@ class AppwriteService {
     }
   }
 
-  Future<models.Session> signIn(
-      {required String email, required String password}) async {
+  Future<models.Session> signIn({
+    required String email,
+    required String password,
+  }) async {
     try {
-      final session =
-          await _account.createEmailPasswordSession(email: email, password: password);
+      final session = await _account.createEmailPasswordSession(
+        email: email,
+        password: password,
+      );
       return session;
     } catch (e) {
       rethrow;
@@ -119,7 +126,7 @@ class AppwriteService {
     return await _db.createRow(
       databaseId: Environment.appwriteDatabaseId,
       tableId: profilesCollection,
-      rowId: ID.unique(),
+      rowId: ownerId,
       data: {
         'ownerId': ownerId,
         'name': name,
@@ -181,9 +188,10 @@ class AppwriteService {
 
   Future<models.RowList> getUserProfiles({required String ownerId}) async {
     return await _db.listRows(
-        databaseId: Environment.appwriteDatabaseId,
-        tableId: profilesCollection,
-        queries: [Query.equal('ownerId', ownerId)]);
+      databaseId: Environment.appwriteDatabaseId,
+      tableId: profilesCollection,
+      queries: [Query.equal('ownerId', ownerId)],
+    );
   }
 
   Future<models.Row> getProfile(String profileId) async {
@@ -206,7 +214,9 @@ class AppwriteService {
     required String followerId,
   }) async {
     final profile = await getProfile(profileId);
-    final List<String> followers = List<String>.from(profile.data['followers'] ?? []);
+    final List<String> followers = List<String>.from(
+      profile.data['followers'] ?? [],
+    );
     if (!followers.contains(followerId)) {
       followers.add(followerId);
       return await updateProfile(
@@ -222,7 +232,9 @@ class AppwriteService {
     required String followerId,
   }) async {
     final profile = await getProfile(profileId);
-    final List<String> followers = List<String>.from(profile.data['followers'] ?? []);
+    final List<String> followers = List<String>.from(
+      profile.data['followers'] ?? [],
+    );
     if (followers.contains(followerId)) {
       followers.remove(followerId);
       return await updateProfile(
@@ -238,7 +250,9 @@ class AppwriteService {
     required String postId,
   }) async {
     final profile = await getProfile(profileId);
-    final List<String> savedPosts = List<String>.from(profile.data['savedPosts'] ?? []);
+    final List<String> savedPosts = List<String>.from(
+      profile.data['savedPosts'] ?? [],
+    );
     if (!savedPosts.contains(postId)) {
       savedPosts.add(postId);
       return await updateProfile(
@@ -254,7 +268,9 @@ class AppwriteService {
     required String postId,
   }) async {
     final profile = await getProfile(profileId);
-    final List<String> savedPosts = List<String>.from(profile.data['savedPosts'] ?? []);
+    final List<String> savedPosts = List<String>.from(
+      profile.data['savedPosts'] ?? [],
+    );
     if (savedPosts.contains(postId)) {
       savedPosts.remove(postId);
       return await updateProfile(
@@ -269,9 +285,7 @@ class AppwriteService {
     return _db.listRows(
       databaseId: Environment.appwriteDatabaseId,
       tableId: profilesCollection,
-      queries: [
-        Query.equal('followers', userId),
-      ],
+      queries: [Query.equal('followers', userId)],
     );
   }
 
@@ -291,11 +305,7 @@ class AppwriteService {
       databaseId: Environment.appwriteDatabaseId,
       tableId: messagesCollection,
       rowId: ID.unique(),
-      data: {
-        'chatId': chatId,
-        'senderId': senderId,
-        'message': message,
-      },
+      data: {'chatId': chatId, 'senderId': senderId, 'message': message},
     );
 
     try {
@@ -348,15 +358,19 @@ class AppwriteService {
       for (final row in data.rows) {
         final imageId = row.data['imageId'];
         if (imageId != null && imageId.isNotEmpty) {
-          final imageUrl = _storage.getFileView(
-            bucketId: Environment.appwriteStorageBucketId,
-            fileId: imageId,
-          ).toString();
-          movies.add(PosterItem.fromMap({
-            '\$id': row.$id,
-            'title': row.data['title'],
-            'imageUrl': imageUrl,
-          }));
+          final imageUrl = _storage
+              .getFileView(
+                bucketId: Environment.appwriteStorageBucketId,
+                fileId: imageId,
+              )
+              .toString();
+          movies.add(
+            PosterItem.fromMap({
+              '\$id': row.$id,
+              'title': row.data['title'],
+              'imageUrl': imageUrl,
+            }),
+          );
         }
       }
       return movies;
@@ -379,9 +393,7 @@ class AppwriteService {
     return _db.listRows(
       databaseId: Environment.appwriteDatabaseId,
       tableId: postsCollection,
-      queries: [
-        Query.equal('profile_id', profileIds),
-      ],
+      queries: [Query.equal('profile_id', profileIds)],
     );
   }
 
@@ -392,10 +404,7 @@ class AppwriteService {
     }
     final ownerId = user.$id;
 
-    final data = {
-      ...postData,
-      'timestamp': DateTime.now().toIso8601String(),
-    };
+    final data = {...postData, 'timestamp': DateTime.now().toIso8601String()};
 
     await _db.createRow(
       databaseId: Environment.appwriteDatabaseId,
@@ -410,15 +419,16 @@ class AppwriteService {
     );
   }
 
-  Future<void> updatePostLikes(String postId, int likes, String timestamp) async {
+  Future<void> updatePostLikes(
+    String postId,
+    int likes,
+    String timestamp,
+  ) async {
     await _db.updateRow(
       databaseId: Environment.appwriteDatabaseId,
       tableId: postsCollection,
       rowId: postId,
-      data: {
-        'likes': likes,
-        'timestamp': timestamp,
-      },
+      data: {'likes': likes, 'timestamp': timestamp},
     );
   }
 
@@ -434,10 +444,7 @@ class AppwriteService {
     return _db.listRows(
       databaseId: Environment.appwriteDatabaseId,
       tableId: commentsCollection,
-      queries: [
-        Query.equal('post_id', postId),
-        Query.orderDesc('timestamp'),
-      ],
+      queries: [Query.equal('post_id', postId), Query.orderDesc('timestamp')],
     );
   }
 
@@ -450,7 +457,10 @@ class AppwriteService {
     final profile = await getProfile(profileId);
     final ownerId = profile.data['ownerId'];
     if (ownerId == null) {
-      throw AppwriteException('Could not determine the owner of the profile.', 403);
+      throw AppwriteException(
+        'Could not determine the owner of the profile.',
+        403,
+      );
     }
 
     final data = {
@@ -478,14 +488,14 @@ class AppwriteService {
     return await _db.listRows(
       databaseId: Environment.appwriteDatabaseId,
       tableId: imagesCollection,
-      queries: [
-        Query.limit(10),
-        if (cursor != null) Query.cursorAfter(cursor),
-      ],
+      queries: [Query.limit(10), if (cursor != null) Query.cursorAfter(cursor)],
     );
   }
 
-  Future<models.Row> uploadImage({required Uint8List bytes, required String filename}) async {
+  Future<models.Row> uploadImage({
+    required Uint8List bytes,
+    required String filename,
+  }) async {
     final file = await _storage.createFile(
       bucketId: Environment.appwriteStorageBucketId,
       fileId: ID.unique(),
@@ -508,7 +518,10 @@ class AppwriteService {
     );
   }
 
-  Future<models.File> uploadFile({required Uint8List bytes, required String filename}) async {
+  Future<models.File> uploadFile({
+    required Uint8List bytes,
+    required String filename,
+  }) async {
     final user = await getUser();
     if (user == null) {
       throw AppwriteException('User not authenticated', 401);
@@ -521,11 +534,11 @@ class AppwriteService {
         Permission.read(Role.any()),
         Permission.update(Role.user(user.$id)),
         Permission.delete(Role.user(user.$id)),
-      ]
+      ],
     );
     return result;
   }
-  
+
   String getFileViewUrl(String fileId) {
     return '${Environment.appwritePublicEndpoint}/storage/buckets/${Environment.appwriteStorageBucketId}/files/$fileId/view?project=${Environment.appwriteProjectId}';
   }
@@ -555,7 +568,7 @@ class AppwriteService {
         allPosts[doc.$id] = doc;
       }
     }
-    
+
     return models.RowList(
       total: allPosts.length,
       rows: allPosts.values.toList(),
@@ -574,7 +587,10 @@ class AppwriteService {
     final ownerId = profile.data['ownerId'];
 
     if (ownerId == null) {
-      throw AppwriteException('Could not determine the owner of the profile for this product.', 403);
+      throw AppwriteException(
+        'Could not determine the owner of the profile for this product.',
+        403,
+      );
     }
 
     final Map<String, dynamic> data = {
@@ -613,9 +629,7 @@ class AppwriteService {
     return _db.listRows(
       databaseId: Environment.appwriteDatabaseId,
       tableId: productsCollection,
-      queries: [
-        Query.equal('profile_id', profileId),
-      ],
+      queries: [Query.equal('profile_id', profileId)],
     );
   }
 
@@ -649,7 +663,10 @@ class AppwriteService {
     final ownerId = profile.data['ownerId'];
 
     if (ownerId == null) {
-      throw AppwriteException('Could not determine the owner of the profile for this playlist.', 403);
+      throw AppwriteException(
+        'Could not determine the owner of the profile for this playlist.',
+        403,
+      );
     }
 
     await _db.createRow(
@@ -674,9 +691,7 @@ class AppwriteService {
     return _db.listRows(
       databaseId: Environment.appwriteDatabaseId,
       tableId: playlistsCollection,
-      queries: [
-        Query.equal('profile_id', profileId),
-      ],
+      queries: [Query.equal('profile_id', profileId)],
     );
   }
 
@@ -690,17 +705,17 @@ class AppwriteService {
       rowId: playlistId,
     );
 
-    final List<dynamic> postIds = List<dynamic>.from(playlist.data['post_ids'] ?? []);
-    
+    final List<dynamic> postIds = List<dynamic>.from(
+      playlist.data['post_ids'] ?? [],
+    );
+
     if (!postIds.contains(postId)) {
       postIds.add(postId);
       await _db.updateRow(
         databaseId: Environment.appwriteDatabaseId,
         tableId: playlistsCollection,
         rowId: playlistId,
-        data: {
-          'post_ids': postIds,
-        },
+        data: {'post_ids': postIds},
       );
     }
   }
@@ -713,7 +728,9 @@ class AppwriteService {
         rowId: playlistId,
       );
 
-      final List<String> postIds = List<String>.from(playlist.data['post_ids'] ?? []);
+      final List<String> postIds = List<String>.from(
+        playlist.data['post_ids'] ?? [],
+      );
 
       if (postIds.isEmpty) {
         return [];
@@ -732,22 +749,26 @@ class AppwriteService {
           final author = Profile.fromRow(profile);
 
           final post = Post(
-              id: postRow.$id,
-              author: author,
-              timestamp: postRow.data['timestamp'] != null ? DateTime.parse(postRow.data['timestamp']) : DateTime.now(),
-              contentText: postRow.data['contentText'] ?? '',
-              stats: PostStats(
-                likes: postRow.data['likes'] ?? 0,
-                comments: postRow.data['comments'] ?? 0,
-                shares: postRow.data['shares'] ?? 0,
-                views: postRow.data['views'] ?? 0,
-              ),
-              mediaUrl: postRow.data['mediaUrl'],
-              linkUrl: postRow.data['linkUrl'],
-              linkTitle: postRow.data['linkTitle'],
-              type: PostType.values.firstWhere(
-                  (e) => e.toString() == 'PostType.${postRow.data['type']}',
-                  orElse: () => PostType.text));
+            id: postRow.$id,
+            author: author,
+            timestamp: postRow.data['timestamp'] != null
+                ? DateTime.parse(postRow.data['timestamp'])
+                : DateTime.now(),
+            contentText: postRow.data['contentText'] ?? '',
+            stats: PostStats(
+              likes: postRow.data['likes'] ?? 0,
+              comments: postRow.data['comments'] ?? 0,
+              shares: postRow.data['shares'] ?? 0,
+              views: postRow.data['views'] ?? 0,
+            ),
+            mediaUrl: postRow.data['mediaUrl'],
+            linkUrl: postRow.data['linkUrl'],
+            linkTitle: postRow.data['linkTitle'],
+            type: PostType.values.firstWhere(
+              (e) => e.toString() == 'PostType.${postRow.data['type']}',
+              orElse: () => PostType.text,
+            ),
+          );
           posts.add(post);
         } catch (e) {
           // If a single post fails, just continue
@@ -779,7 +800,9 @@ class AppwriteService {
         'profileId': profileId,
         'mediaUrl': mediaUrl,
         'mediaType': mediaType,
-        'expiresAt': DateTime.now().add(const Duration(hours: 24)).toIso8601String(),
+        'expiresAt': DateTime.now()
+            .add(const Duration(hours: 24))
+            .toIso8601String(),
         if (caption != null) 'caption': caption,
       },
       permissions: [

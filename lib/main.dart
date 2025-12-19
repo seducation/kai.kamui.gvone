@@ -38,7 +38,7 @@ import 'setting_privacy_screen.dart';
 import 'setting_safety_screen.dart';
 import 'setting_support_screen.dart';
 import 'about_searches_widgets/about_searches_widget.dart';
-import 'widgets/main_bottom_nav_bar.dart';
+import 'adaptive_ui/adaptive_scaffold.dart';
 
 List<CameraDescription> cameras = []; // Global cameras list
 
@@ -262,6 +262,8 @@ class _MainScreenState extends State<MainScreen> {
     const LensScreen(),
   ];
 
+  final List<String> _titles = ['Home', 'Chats', 'Search', 'Community', 'Lens'];
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -280,12 +282,11 @@ class _MainScreenState extends State<MainScreen> {
           });
         }
       },
-      child: Scaffold(
-        body: _screens[_selectedIndex],
-        bottomNavigationBar: CustomBottomNavBar(
-          currentIndex: _selectedIndex,
-          onTap: _onItemTapped,
-        ),
+      child: AdaptiveScaffold(
+        selectedIndex: _selectedIndex,
+        onIndexChanged: _onItemTapped,
+        screens: _screens,
+        title: _titles[_selectedIndex],
       ),
     );
   }
