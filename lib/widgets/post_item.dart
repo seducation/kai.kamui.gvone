@@ -174,7 +174,7 @@ class _PostItemState extends State<PostItem> {
   
   @override
   Widget build(BuildContext context) {
-     if (_prefs == null) {
+    if (_prefs == null) {
       return const Center(child: CircularProgressIndicator());
     }
     return Container(
@@ -192,11 +192,19 @@ class _PostItemState extends State<PostItem> {
               ),
             ),
           _buildMedia(context),
+          if (widget.post.linkTitle != null && widget.post.linkTitle!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+              child: Text(
+                widget.post.linkTitle!,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black87),
+              ),
+            ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
             child: _buildActionBar(),
           ),
-           const Divider(height: 1, color: Color(0xFFE0E0E0)),
+          const Divider(height: 1, color: Color(0xFFE0E0E0)),
         ],
       ),
     );
