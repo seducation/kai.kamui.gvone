@@ -1,3 +1,4 @@
+import 'package:appwrite/models.dart' as models;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:my_app/appwrite_service.dart';
@@ -11,7 +12,6 @@ import 'package:timeago/timeago.dart' as timeago;
 import 'package:video_player/video_player.dart';
 import 'package:any_link_preview/any_link_preview.dart';
 import 'package:url_launcher/url_launcher.dart';
-
 
 class PostItem extends StatefulWidget {
   final Post post;
@@ -63,7 +63,7 @@ class _PostItemState extends State<PostItem> {
     _prefs = await SharedPreferences.getInstance();
     _fetchCommentCount();
     _fetchAuthorName();
-    if(mounted){
+    if (mounted) {
       setState(() {
         _isLiked = _prefs?.getBool(widget.post.id) ?? false;
         _isSaved = _prefs?.getBool('saved_${widget.post.id}') ?? false;
@@ -74,7 +74,8 @@ class _PostItemState extends State<PostItem> {
   Future<void> _fetchAuthorName() async {
     if (widget.post.originalAuthor != null) {
       try {
-        final Profile authorProfile = await _appwriteService.getProfile(widget.post.originalAuthor!.id);
+        final models.Row authorProfileRow = await _appwriteService.getProfile(widget.post.originalAuthor!.id);
+        final Profile authorProfile = Profile.fromRow(authorProfileRow);
         if (mounted) {
           setState(() {
             _authorName = authorProfile.name;
@@ -111,11 +112,11 @@ class _PostItemState extends State<PostItem> {
       ));
       return;
     }
-    
+
     final newLikedState = !_isLiked;
     final newLikeCount = newLikedState ? _likeCount + 1 : _likeCount - 1;
 
-    if(mounted){
+    if (mounted) {
       setState(() {
         _isLiked = newLikedState;
         _likeCount = newLikeCount;
@@ -126,10 +127,10 @@ class _PostItemState extends State<PostItem> {
       await _appwriteService.updatePostLikes(widget.post.id, newLikeCount, widget.post.timestamp.toIso8601String());
       await _prefs!.setBool(widget.post.id, newLikedState);
     } catch (e) {
-      if(mounted){
+      if (mounted) {
         setState(() {
           _isLiked = !newLikedState;
-          _likeCount = _isLiked ? newLikeCount + 1 : newLikeCount -1;
+          _likeCount = _isLiked ? newLikeCount + 1 : newLikeCount - 1;
         });
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Error: $e'),
@@ -149,10 +150,10 @@ class _PostItemState extends State<PostItem> {
       ));
       return;
     }
-    
+
     final newSavedState = !_isSaved;
 
-    if(mounted){
+    if (mounted) {
       setState(() {
         _isSaved = newSavedState;
       });
@@ -166,7 +167,7 @@ class _PostItemState extends State<PostItem> {
       }
       await _prefs!.setBool('saved_${widget.post.id}', newSavedState);
     } catch (e) {
-      if(mounted){
+      if (mounted) {
         setState(() {
           _isSaved = !newSavedState;
         });
@@ -189,7 +190,7 @@ class _PostItemState extends State<PostItem> {
       _fetchCommentCount();
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     if (_prefs == null) {
@@ -264,7 +265,7 @@ class _PostItemState extends State<PostItem> {
         return const SizedBox.shrink();
     }
   }
-  
+
   Widget _buildHeader(BuildContext context) {
     final handleColor = Colors.grey[600];
     final bool isValidUrl = widget.post.author.profileImageUrl != null && (widget.post.author.profileImageUrl!.startsWith('http') || widget.post.author.profileImageUrl!.startsWith('https'));
@@ -280,12 +281,14 @@ class _PostItemState extends State<PostItem> {
         padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0),
         child: Row(
           children: [
-            if(isValidUrl)
-            CircleAvatar(
-              radius: 20,
-              backgroundImage: CachedNetworkImageProvider(widget.post.author.profileImageUrl!),
-              backgroundColor: Colors.grey[200],
-            ) else CircleAvatar(radius: 20, backgroundColor: Colors.grey[200]),
+            if (isValidUrl)
+              CircleAvatar(
+                radius: 20,
+                backgroundImage: CachedNetworkImageProvider(widget.post.author.profileImageUrl!),
+                backgroundColor: Colors.grey[200],
+              )
+            else
+              CircleAvatar(radius: 20, backgroundColor: Colors.grey[200]),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -320,7 +323,7 @@ class _PostItemState extends State<PostItem> {
                     ],
                   ),
                   Text(
-                     timeago.format(widget.post.timestamp),
+                    timeago.format(widget.post.timestamp),
                     style: TextStyle(color: handleColor, fontSize: 14),
                   ),
                 ],
@@ -334,53 +337,41 @@ class _PostItemState extends State<PostItem> {
   }
 
   Widget _buildImageContent(BuildContext context) {
-     final bool isValidUrl = widget.post.mediaUrl != null && (widget.post.mediaUrl!.startsWith('http') || widget.post.mediaUrl!.startsWith('https'));
+    final bool isValidUrl = widget.post.mediaUrl != null && (widget.post.mediaUrl!.startsWith('http') || widget.post.mediaUrl!.startsWith('https'));
     return GestureDetector(
-        onTap: () {
+      onTap: () {
         // Handle image tap if necessary
-        },
-        child: isValidUrl ? CachedNetworkImage(
-        imageUrl: widget.post.mediaUrl!,
-        width: double.infinity,
-        fit: BoxFit.cover,
-        placeholder: (context, url) => AspectRatio(
-            aspectRatio: 1, 
-            child: Container(color: Colors.grey[200])
-          ),
-        errorWidget: (context, url, error) => AspectRatio(
-          aspectRatio: 1, 
-          child: Container(
-            color: Colors.grey[200], 
-            child: const Icon(Icons.error, color: Colors.grey)
-          )
-        ),
-      ): AspectRatio(
-          aspectRatio: 1, 
-          child: Container(
-            color: Colors.grey[200], 
-            child: const Icon(Icons.error, color: Colors.grey)
-          )
-        ),
+      },
+      child: isValidUrl
+          ? CachedNetworkImage(
+              imageUrl: widget.post.mediaUrl!,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              placeholder: (context, url) => AspectRatio(aspectRatio: 1, child: Container(color: Colors.grey[200])),
+              errorWidget: (context, url, error) => AspectRatio(
+                  aspectRatio: 1, child: Container(color: Colors.grey[200], child: const Icon(Icons.error, color: Colors.grey))),
+            )
+          : AspectRatio(aspectRatio: 1, child: Container(color: Colors.grey[200], child: const Icon(Icons.error, color: Colors.grey))),
     );
   }
 
   Widget _buildLinkPreview(BuildContext context) {
     if (widget.post.linkUrl == null) return const SizedBox.shrink();
-    
+
     return GestureDetector(
       onTap: () async {
-         final url = Uri.parse(widget.post.linkUrl!);
-          if (await canLaunchUrl(url)) {
-            await launchUrl(url, mode: LaunchMode.inAppWebView);
-          }
+        final url = Uri.parse(widget.post.linkUrl!);
+        if (await canLaunchUrl(url)) {
+          await launchUrl(url, mode: LaunchMode.inAppWebView);
+        }
       },
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
-        decoration: BoxDecoration(
-          border: Border.all(color: const Color(0xFFE0E0E0)),
-          borderRadius: BorderRadius.circular(8.0),
-        ),
-        child: AnyLinkPreview(
+          margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
+          decoration: BoxDecoration(
+            border: Border.all(color: const Color(0xFFE0E0E0)),
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+          child: AnyLinkPreview(
             link: widget.post.linkUrl!,
             displayDirection: UIDirection.uiDirectionHorizontal,
             showMultimedia: true,
@@ -394,8 +385,7 @@ class _PostItemState extends State<PostItem> {
             borderRadius: 8,
             removeElevation: true,
             urlLaunchMode: LaunchMode.inAppWebView,
-          )
-      ),
+          )),
     );
   }
 

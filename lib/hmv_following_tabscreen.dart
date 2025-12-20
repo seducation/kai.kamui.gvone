@@ -3,6 +3,7 @@ import 'package:my_app/appwrite_service.dart';
 import 'package:my_app/model/post.dart';
 import 'package:provider/provider.dart';
 import 'package:appwrite/appwrite.dart';
+import 'package:appwrite/models.dart' as models;
 
 import './widgets/post_item.dart';
 import 'model/profile.dart';
@@ -49,7 +50,7 @@ class _HMVFollowingTabscreenState extends State<HMVFollowingTabscreen> {
       // 2. Get the user's active profile
       final profiles = await appwriteService.getUserProfiles(ownerId: user.$id);
       if (profiles.rows.isEmpty) {
-         if (!mounted) return;
+        if (!mounted) return;
         setState(() {
           _error = 'No profile found for the current user.';
           _isLoading = false;
@@ -58,13 +59,12 @@ class _HMVFollowingTabscreenState extends State<HMVFollowingTabscreen> {
       }
       _profileId = profiles.rows.first.$id;
 
-
       // 3. Get the list of profiles the current user is a member of or is following
       final followingProfiles = await appwriteService.getFollowingProfiles(userId: _profileId!);
-      
+
       // 4. Extract the IDs of the followed profiles
       final followedProfileIds = followingProfiles.rows.map((profile) => profile.$id).toList();
-      
+
       // Also include the user's own posts in their following feed
       if (!followedProfileIds.contains(_profileId!)) {
         followedProfileIds.add(_profileId!);
@@ -84,13 +84,13 @@ class _HMVFollowingTabscreenState extends State<HMVFollowingTabscreen> {
 
       // 6. Fetch all profiles to map authors (can be optimized later)
       final profilesResponse = await appwriteService.getProfiles();
-      final profilesMap = {for (var p in profilesResponse.rows) p.$id: Profile.fromMap(p.data, p.$id)};
+      final profilesMap = {for (var p in profilesResponse.rows) p.$id: Profile.fromRow(p)};
 
       // 7. Map the post data to Post objects
       final posts = postsResponse.rows.map((row) {
         final profileIdsList = row.data['profile_id'] as List?;
         final postAuthorProfileId = (profileIdsList?.isNotEmpty ?? false) ? profileIdsList!.first as String? : null;
-        
+
         if (postAuthorProfileId == null) return null;
 
         final author = profilesMap[postAuthorProfileId];
@@ -98,7 +98,7 @@ class _HMVFollowingTabscreenState extends State<HMVFollowingTabscreen> {
         if (author == null) {
           return null; // Skip post if author profile not found
         }
-        
+
         final updatedAuthor = Profile(
           id: author.id,
           name: author.name,
@@ -110,7 +110,6 @@ class _HMVFollowingTabscreenState extends State<HMVFollowingTabscreen> {
           ownerId: author.ownerId,
           createdAt: author.createdAt,
         );
-
 
         PostType type = PostType.text;
         String? mediaUrl;
@@ -125,10 +124,10 @@ class _HMVFollowingTabscreenState extends State<HMVFollowingTabscreen> {
 
         Profile? originalAuthor;
         if (originalAuthorId != null && originalAuthorId != postAuthorProfileId) {
-            final originalAuthorProfile = profilesMap[originalAuthorId];
-            if (originalAuthorProfile != null) {
-                originalAuthor = originalAuthorProfile;
-            }
+          final originalAuthorProfile = profilesMap[originalAuthorId];
+          if (originalAuthorProfile != null) {
+            originalAuthor = originalAuthorProfile;
+          }
         }
 
         return Post(
@@ -151,7 +150,7 @@ class _HMVFollowingTabscreenState extends State<HMVFollowingTabscreen> {
       }).whereType<Post>().toList();
 
       posts.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-      
+
       if (!mounted) return;
       setState(() {
         _posts = posts;
