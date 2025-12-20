@@ -118,7 +118,7 @@ class _HMVFollowingTabscreenState extends State<HMVFollowingTabscreen> {
           mediaUrl = appwriteService.getFileViewUrl(fileIds.first);
         }
 
-        final originalAuthorIds = row.data['author_id'] as List?;
+        final originalAuthorIds = row.data['author_id'] as List<dynamic>?;
         final originalAuthorId = (originalAuthorIds?.isNotEmpty ?? false) ? originalAuthorIds!.first as String? : null;
 
         Profile? originalAuthor;
@@ -128,6 +128,9 @@ class _HMVFollowingTabscreenState extends State<HMVFollowingTabscreen> {
             originalAuthor = originalAuthorProfile;
           }
         }
+        
+        final authorIds = row.data['author_id'] as List<dynamic>?;
+        final profileIds = row.data['profile_id'] as List<dynamic>?;
 
         return Post(
           id: row.$id,
@@ -145,6 +148,8 @@ class _HMVFollowingTabscreenState extends State<HMVFollowingTabscreen> {
             shares: row.data['shares'] ?? 0,
             views: row.data['views'] ?? 0,
           ),
+          authorIds: authorIds?.map((e) => e as String).toList(),
+          profileIds: profileIds?.map((e) => e as String).toList(),
         );
       }).whereType<Post>().toList();
 

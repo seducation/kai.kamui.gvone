@@ -107,6 +107,8 @@ class _PostsTabState extends State<PostsTab> {
           stats: postStats,
           linkUrl: row.data['linkUrl'],
           linkTitle: row.data['titles'],
+          authorIds: (row.data['author_id'] as List<dynamic>?)?.map((e) => e as String).toList(),
+          profileIds: (row.data['profile_id'] as List<dynamic>?)?.map((e) => e as String).toList(),
         );
       }).where((post) => post != null).cast<Post>().toList();
 

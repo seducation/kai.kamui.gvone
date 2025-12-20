@@ -13,6 +13,7 @@ class SrvFeatureTabscreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appwriteService = context.read<AppwriteService>();
     final featureResults = searchResults
         .where(
           (result) => result['type'] == 'post' || result['type'] == 'profile',
@@ -65,9 +66,17 @@ class SrvFeatureTabscreen extends StatelessWidget {
                   }
                   final author = snapshot.data!;
 
-                  final originalAuthorIds = postData['authoreid'] as List?;
+                  final originalAuthorIds = postData['author_id'] as List?;
                   final originalAuthorId =
                       (originalAuthorIds?.isNotEmpty ?? false) ? originalAuthorIds!.first as String? : null;
+                  
+                  PostType type = PostType.text;
+                  String? mediaUrl;
+                  final fileIds = postData['file_ids'] as List?;
+                  if (fileIds != null && fileIds.isNotEmpty) {
+                    type = PostType.image; // Assuming image for now, could be video
+                    mediaUrl = appwriteService.getFileViewUrl(fileIds.first);
+                  }
 
                   if (originalAuthorId != null &&
                       originalAuthorId != authorProfileId) {
@@ -98,6 +107,12 @@ class SrvFeatureTabscreen extends StatelessWidget {
                             shares: 0,
                             views: 0,
                           ),
+                          authorIds: (postData['author_id'] as List<dynamic>?)?.map((e) => e as String).toList(),
+                          profileIds: (postData['profile_id'] as List<dynamic>?)?.map((e) => e as String).toList(),
+                          mediaUrl: mediaUrl,
+                          linkUrl: postData['linkUrl'] as String?,
+                          linkTitle: postData['titles'] as String? ?? '',
+                          type: type,
                         );
                         return PostItem(post: post, profileId: profileId);
                       },
@@ -115,6 +130,12 @@ class SrvFeatureTabscreen extends StatelessWidget {
                         shares: 0,
                         views: 0,
                       ),
+                      authorIds: (postData['author_id'] as List<dynamic>?)?.map((e) => e as String).toList(),
+                      profileIds: (postData['profile_id'] as List<dynamic>?)?.map((e) => e as String).toList(),
+                      mediaUrl: mediaUrl,
+                      linkUrl: postData['linkUrl'] as String?,
+                      linkTitle: postData['titles'] as String? ?? '',
+                      type: type,
                     );
                     return PostItem(post: post, profileId: profileId);
                   }
