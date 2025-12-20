@@ -248,27 +248,57 @@ class _PostItemState extends State<PostItem> {
 
   Widget _buildHeader(BuildContext context) {
     final handleColor = Colors.grey[600];
-    final bool isValidUrl = widget.post.author.profileImageUrl != null && (widget.post.author.profileImageUrl!.startsWith('http') || widget.post.author.profileImageUrl!.startsWith('https'));
+    final bool hasAuthors = widget.post.authorIds != null && widget.post.authorIds!.isNotEmpty;
+    final bool hasMultipleProfiles = widget.post.profileIds != null && widget.post.profileIds!.length > 1;
+
+    // Show hamburger icon if there is at least one author OR more than one profile.
+    final bool showHamburger = hasAuthors || hasMultipleProfiles;
+
+    // Calculate total count of authors and profiles.
+    final authorCount = widget.post.authorIds?.length ?? 0;
+    final profileCount = widget.post.profileIds?.length ?? 0;
+    final totalCount = authorCount + profileCount;
 
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => ProfilePageScreen(profileId: widget.post.author.id)),
-        );
+        // Only navigate to profile page if it's a single author post.
+        if (!showHamburger) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => ProfilePageScreen(profileId: widget.post.author.id)),
+          );
+        }
+        // Tapping the hamburger icon can have a dedicated action in the future.
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0),
         child: Row(
           children: [
-            if (isValidUrl)
-              CircleAvatar(
-                radius: 20,
-                backgroundImage: CachedNetworkImageProvider(widget.post.author.profileImageUrl!),
-                backgroundColor: Colors.grey[200],
+            if (showHamburger)
+              Row(
+                children: [
+                  const Icon(Icons.menu, size: 40, color: Colors.black54),
+                  const SizedBox(width: 8),
+                  Text(
+                    totalCount.toString(),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                  ),
+                ],
               )
             else
-              CircleAvatar(radius: 20, backgroundColor: Colors.grey[200]),
+              Builder(builder: (context) {
+                final bool isValidUrl = widget.post.author.profileImageUrl != null &&
+                    (widget.post.author.profileImageUrl!.startsWith('http') || widget.post.author.profileImageUrl!.startsWith('https'));
+                if (isValidUrl) {
+                  return CircleAvatar(
+                    radius: 20,
+                    backgroundImage: CachedNetworkImageProvider(widget.post.author.profileImageUrl!),
+                    backgroundColor: Colors.grey[200],
+                  );
+                } else {
+                  return CircleAvatar(radius: 20, backgroundColor: Colors.grey[200]);
+                }
+              }),
             const SizedBox(width: 12),
             Expanded(
               child: Column(

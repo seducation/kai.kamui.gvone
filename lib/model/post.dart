@@ -22,6 +22,8 @@ class Post {
   final String? linkUrl;
   final String? linkTitle;
   final PostStats stats;
+  final List<String>? authorIds;
+  final List<String>? profileIds;
   double score;
   bool isLiked;
   bool isSaved;
@@ -37,6 +39,8 @@ class Post {
     this.linkUrl,
     this.linkTitle,
     required this.stats,
+    this.authorIds,
+    this.profileIds,
     this.score = 0.0,
     this.isLiked = false,
     this.isSaved = false,
