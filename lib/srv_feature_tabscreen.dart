@@ -65,7 +65,9 @@ class SrvFeatureTabscreen extends StatelessWidget {
                   }
                   final author = snapshot.data!;
 
-                  final originalAuthorId = postData['authoreid'] as String?;
+                  final originalAuthorIds = postData['authoreid'] as List?;
+                  final originalAuthorId =
+                      (originalAuthorIds?.isNotEmpty ?? false) ? originalAuthorIds!.first as String? : null;
 
                   if (originalAuthorId != null &&
                       originalAuthorId != authorProfileId) {

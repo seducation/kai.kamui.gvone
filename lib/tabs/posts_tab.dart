@@ -86,7 +86,9 @@ class _PostsTabState extends State<PostsTab> {
         );
 
         String contentText = row.data['caption'] ?? '';
-        final originalAuthorId = row.data['authoreid'] as String?;
+        final originalAuthorIds = row.data['authoreid'] as List?;
+        final originalAuthorId = (originalAuthorIds?.isNotEmpty ?? false) ? originalAuthorIds!.first as String? : null;
+
         if (originalAuthorId != null && originalAuthorId != profileId) {
             final originalAuthorProfileData = profilesMap[originalAuthorId];
             if (originalAuthorProfileData != null) {

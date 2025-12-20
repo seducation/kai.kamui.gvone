@@ -121,7 +121,9 @@ class _HMVFollowingTabscreenState extends State<HMVFollowingTabscreen> {
         }
 
         String contentText = row.data['caption'] ?? '';
-        final originalAuthorId = row.data['authoreid'] as String?;
+        final originalAuthorIds = row.data['authoreid'] as List?;
+        final originalAuthorId = (originalAuthorIds?.isNotEmpty ?? false) ? originalAuthorIds!.first as String? : null;
+
         if (originalAuthorId != null && originalAuthorId != postAuthorProfileId) {
             final originalAuthorProfile = profilesMap[originalAuthorId];
             if (originalAuthorProfile != null) {
