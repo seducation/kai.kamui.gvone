@@ -409,7 +409,6 @@ class AppwriteService {
       ...postData,
       'timestamp': DateTime.now().toIso8601String(),
       'author_id': postData['author_id'],
-      'originalAuthor': postData['originalAuthor'],
     };
 
     await _db.createRow(

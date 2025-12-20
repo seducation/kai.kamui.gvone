@@ -150,8 +150,6 @@ class _AddPostScreenState extends State<AddPostScreen> {
 
       if (_allowUserEditing && _selectedProfileId != null) {
         postData['author_id'] = [_selectedProfileId];
-        final profile = _profiles.firstWhere((p) => p.id == _selectedProfileId);
-        postData['originalAuthor'] = profile.name;
       }
 
       // Show the WhereToPostScreen as a modal bottom sheet
