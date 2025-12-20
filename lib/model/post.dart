@@ -14,6 +14,7 @@ class PostStats {
 class Post {
   final String id;
   final Profile author;
+  final Profile? originalAuthor; // Add this line
   final DateTime timestamp;
   final String contentText;
   final PostType type;
@@ -28,6 +29,7 @@ class Post {
   Post({
     required this.id,
     required this.author,
+    this.originalAuthor, // Add this line
     required this.timestamp,
     required this.contentText,
     this.type = PostType.text,

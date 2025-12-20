@@ -79,20 +79,19 @@ class SrvFeatureTabscreen extends StatelessWidget {
                           return const SizedBox.shrink();
                         }
 
-                        String contentText = postData['caption'] ?? '';
+                        Profile? originalAuthor;
                         if (originalAuthorSnapshot.hasData) {
-                          final originalAuthor = originalAuthorSnapshot.data!;
-                          contentText =
-                              'by ${originalAuthor.name}: $contentText';
+                          originalAuthor = originalAuthorSnapshot.data!;
                         }
 
                         final post = Post(
                           id: postData['\$id'],
                           author: author,
+                          originalAuthor: originalAuthor,
                           timestamp:
                               DateTime.tryParse(postData['timestamp'] ?? '') ??
                                   DateTime.now(),
-                          contentText: contentText,
+                          contentText: postData['caption'] ?? '',
                           stats: PostStats(
                             likes: postData['likes'] ?? 0,
                             comments: 0,

@@ -273,9 +273,28 @@ class _PostItemState extends State<PostItem> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    widget.post.author.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
+                  Row(
+                    children: [
+                      Text(
+                        widget.post.author.name,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
+                      ),
+                      if (widget.post.originalAuthor != null)
+                        Row(
+                          children: [
+                            const SizedBox(width: 4),
+                            Text(
+                              'by',
+                              style: TextStyle(color: handleColor, fontSize: 14),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              widget.post.originalAuthor!.name,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
+                            ),
+                          ],
+                        ),
+                    ],
                   ),
                   Text(
                      timeago.format(widget.post.timestamp),

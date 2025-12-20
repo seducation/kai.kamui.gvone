@@ -120,24 +120,24 @@ class _HMVFollowingTabscreenState extends State<HMVFollowingTabscreen> {
           mediaUrl = appwriteService.getFileViewUrl(fileIds.first);
         }
 
-        String contentText = row.data['caption'] ?? '';
         final originalAuthorIds = row.data['authoreid'] as List?;
         final originalAuthorId = (originalAuthorIds?.isNotEmpty ?? false) ? originalAuthorIds!.first as String? : null;
 
+        Profile? originalAuthor;
         if (originalAuthorId != null && originalAuthorId != postAuthorProfileId) {
             final originalAuthorProfile = profilesMap[originalAuthorId];
             if (originalAuthorProfile != null) {
-                final originalAuthorName = originalAuthorProfile.name;
-                contentText = 'by $originalAuthorName: $contentText';
+                originalAuthor = originalAuthorProfile;
             }
         }
 
         return Post(
           id: row.$id,
           author: updatedAuthor,
+          originalAuthor: originalAuthor,
           timestamp: DateTime.tryParse(row.data['timestamp'] ?? '') ?? DateTime.now(),
           linkTitle: row.data['titles'] as String? ?? '',
-          contentText: contentText,
+          contentText: row.data['caption'] ?? '',
           type: type,
           mediaUrl: mediaUrl,
           linkUrl: row.data['linkUrl'] as String?,
