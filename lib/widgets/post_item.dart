@@ -1,10 +1,8 @@
-import 'package:appwrite/models.dart' as models;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:my_app/appwrite_service.dart';
 import 'package:my_app/comments_screen.dart';
 import 'package:my_app/model/post.dart';
-import 'package:my_app/model/profile.dart';
 import 'package:my_app/profile_page.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -31,7 +29,6 @@ class _PostItemState extends State<PostItem> {
   late AppwriteService _appwriteService;
   SharedPreferences? _prefs;
   VideoPlayerController? _controller;
-  String? _authorName;
 
   @override
   void initState() {
@@ -62,28 +59,11 @@ class _PostItemState extends State<PostItem> {
   Future<void> _initializeState() async {
     _prefs = await SharedPreferences.getInstance();
     _fetchCommentCount();
-    _fetchAuthorName();
     if (mounted) {
       setState(() {
         _isLiked = _prefs?.getBool(widget.post.id) ?? false;
         _isSaved = _prefs?.getBool('saved_${widget.post.id}') ?? false;
       });
-    }
-  }
-
-  Future<void> _fetchAuthorName() async {
-    if (widget.post.originalAuthor != null) {
-      try {
-        final models.Row authorProfileRow = await _appwriteService.getProfile(widget.post.originalAuthor!.id);
-        final Profile authorProfile = Profile.fromRow(authorProfileRow);
-        if (mounted) {
-          setState(() {
-            _authorName = authorProfile.name;
-          });
-        }
-      } catch (e) {
-        // Handle error if needed
-      }
     }
   }
 
@@ -312,7 +292,7 @@ class _PostItemState extends State<PostItem> {
                               const SizedBox(width: 4),
                               Flexible(
                                 child: Text(
-                                  _authorName ?? widget.post.originalAuthor!.id,
+                                  widget.post.originalAuthor!.name,
                                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
                                   overflow: TextOverflow.ellipsis,
                                 ),
