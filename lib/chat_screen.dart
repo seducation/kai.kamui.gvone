@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/add_post_screen.dart';
 import 'package:my_app/appwrite_service.dart';
 import 'package:appwrite/models.dart' as models;
+import 'package:my_app/profile_screen.dart';
+import 'package:my_app/search_screen.dart';
 import 'package:provider/provider.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -90,8 +93,39 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.menu),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ProfileScreen()),
+            );
+          },
+        ),
         title: Text('Chat with ${widget.receiverId}'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AddPostScreen()),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SearchScreen(
+                    appwriteService: context.read<AppwriteService>(),
+                  ),
+                ),
+              );
+            },
+          ),
           PopupMenuButton<String>(
             onSelected: (value) {
               // Handle menu item selection
