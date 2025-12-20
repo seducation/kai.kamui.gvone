@@ -42,10 +42,14 @@ class _PostsTabState extends State<PostsTab> {
       final profilesMap = {for (var doc in profilesResponse.rows) doc.$id: doc.data};
 
       final posts = postsResponse.rows.map((row) {
-        final creatorProfileData = profilesMap[row.data['profile_id']];
+        final profileIds = row.data['profile_id'] as List?;
+        final profileId = (profileIds?.isNotEmpty ?? false) ? profileIds!.first as String? : null;
+        if (profileId == null) return null;
+
+        final creatorProfileData = profilesMap[profileId];
         if (creatorProfileData == null) return null;
 
-        final author = Profile.fromMap(creatorProfileData, row.data['profile_id']);
+        final author = Profile.fromMap(creatorProfileData, profileId);
 
         final updatedAuthor = Profile(
           id: author.id,
