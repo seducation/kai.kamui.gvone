@@ -118,7 +118,7 @@ class _HMVFollowingTabscreenState extends State<HMVFollowingTabscreen> {
           mediaUrl = appwriteService.getFileViewUrl(fileIds.first);
         }
 
-        final originalAuthorIds = row.data['authoreid'] as List?;
+        final originalAuthorIds = row.data['author_id'] as List?;
         final originalAuthorId = (originalAuthorIds?.isNotEmpty ?? false) ? originalAuthorIds!.first as String? : null;
 
         Profile? originalAuthor;

@@ -84,7 +84,7 @@ class _SrvFollowingTabscreenState extends State<SrvFollowingTabscreen> {
 
       // 6. Fetch all profiles to map authors (can be optimized later)
       final profilesResponse = await appwriteService.getProfiles();
-      final profilesMap = {for (var p in profilesResponse.rows) p.$id: Profile.fromMap(p.data, p.$id)};
+      final profilesMap = {for (var p in profilesResponse.rows) p.$id: Profile.fromRow(p)};
 
       // 7. Map the post data to Post objects
       final posts = postsResponse.rows.map((row) {
@@ -121,22 +121,24 @@ class _SrvFollowingTabscreenState extends State<SrvFollowingTabscreen> {
           mediaUrl = appwriteService.getFileViewUrl(fileIds.first);
         }
 
-        String contentText = row.data['caption'] ?? '';
-        final originalAuthorId = row.data['author_id'] as String?;
+        final originalAuthorIds = row.data['author_id'] as List?;
+        final originalAuthorId = (originalAuthorIds?.isNotEmpty ?? false) ? originalAuthorIds!.first as String? : null;
+
+        Profile? originalAuthor;
         if (originalAuthorId != null && originalAuthorId != postAuthorProfileId) {
-            final originalAuthorProfile = profilesMap[originalAuthorId];
-            if (originalAuthorProfile != null) {
-                final originalAuthorName = originalAuthorProfile.name;
-                contentText = 'by $originalAuthorName: $contentText';
-            }
+          final originalAuthorProfile = profilesMap[originalAuthorId];
+          if (originalAuthorProfile != null) {
+            originalAuthor = originalAuthorProfile;
+          }
         }
 
         return Post(
           id: row.$id,
           author: updatedAuthor,
+          originalAuthor: originalAuthor,
           timestamp: DateTime.tryParse(row.data['timestamp'] ?? '') ?? DateTime.now(),
           linkTitle: row.data['titles'] as String? ?? '',
-          contentText: contentText,
+          contentText: row.data['caption'] ?? '',
           type: type,
           mediaUrl: mediaUrl,
           linkUrl: row.data['linkUrl'] as String?,

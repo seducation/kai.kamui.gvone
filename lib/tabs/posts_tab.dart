@@ -85,7 +85,7 @@ class _PostsTabState extends State<PostsTab> {
           views: row.data['views'] ?? 0,
         );
 
-        final originalAuthorIds = row.data['authoreid'] as List?;
+        final originalAuthorIds = row.data['author_id'] as List?;
         final originalAuthorId = (originalAuthorIds?.isNotEmpty ?? false) ? originalAuthorIds!.first as String? : null;
 
         Profile? originalAuthor;
