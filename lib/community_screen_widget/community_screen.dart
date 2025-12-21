@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'hero_banner.dart';
 import 'status_rail_section.dart';
-import '../appwrite_service.dart';
-import 'poster_item.dart';
-import 'horizontal_rail_section_for_community_screen.dart';
 import 'product_grid.dart';
 
 class CommunityScreen extends StatefulWidget {
@@ -15,7 +11,6 @@ class CommunityScreen extends StatefulWidget {
 }
 
 class _CommunityScreenState extends State<CommunityScreen> {
-  List<PosterItem> movies = [];
   bool loading = true;
 
   @override
@@ -25,10 +20,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Future<void> loadContent() async {
-    final service = context.read<AppwriteService>();
-    final data = await service.getMovies();
+    // final service = context.read<AppwriteService>();
+    // final data = await service.getMovies();
     setState(() {
-      movies = data;
+      // movies = data;
       loading = false;
     });
   }
@@ -72,21 +67,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
             const SizedBox(height: 20),
             ProductGrid(),
             const SizedBox(height: 20),
-            HorizontalSection(
-              title: "Discover",
-              items: movies,
-              isLoading: loading,
-            ),
-            HorizontalSection(
-              title: "Trending Now",
-              items: movies,
-              isLoading: loading,
-            ),
-            HorizontalSection(
-              title: "New Releases",
-              items: movies,
-              isLoading: loading,
-            ),
           ],
         ),
       ),

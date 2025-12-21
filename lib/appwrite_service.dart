@@ -5,7 +5,7 @@ import 'package:appwrite/appwrite.dart';
 import 'package:appwrite/models.dart' as models;
 import 'package:appwrite/enums.dart';
 import 'package:my_app/environment.dart';
-import 'community_screen_widget/poster_item.dart';
+
 import 'package:my_app/model/post.dart';
 import 'package:my_app/model/profile.dart';
 
@@ -346,41 +346,6 @@ class AppwriteService {
       databaseId: Environment.appwriteDatabaseId,
       tableId: messagesCollection,
     );
-  }
-
-  Future<List<PosterItem>> getMovies() async {
-    try {
-      final data = await _db.listRows(
-        databaseId: Environment.appwriteDatabaseId,
-        tableId: "movies",
-      );
-
-      final movies = <PosterItem>[];
-      for (final row in data.rows) {
-        final imageId = row.data['imageId'];
-        if (imageId != null && imageId.isNotEmpty) {
-          final imageUrl = _storage
-              .getFileView(
-                bucketId: Environment.appwriteStorageBucketId,
-                fileId: imageId,
-              )
-              .toString();
-          movies.add(
-            PosterItem.fromMap({
-              '\$id': row.$id,
-              'title': row.data['title'],
-              'imageUrl': imageUrl,
-            }),
-          );
-        }
-      }
-      return movies;
-    } on AppwriteException catch (e) {
-      if (e.code == 404) {
-        return [];
-      }
-      return [];
-    }
   }
 
   Future<models.RowList> getPosts() async {
