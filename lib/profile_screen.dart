@@ -222,6 +222,60 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
+                  const Text(
+                    'Linked Services',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Card(
+                    child: ListTile(
+                      title: const Text('Mobile No'),
+                      trailing: TextButton(
+                        onPressed: () {},
+                        child: const Text('Link'),
+                      ),
+                    ),
+                  ),
+                  Card(
+                    child: ListTile(
+                      title: const Text('Email'),
+                      trailing: TextButton(
+                        onPressed: () {},
+                        child: const Text('Link'),
+                      ),
+                    ),
+                  ),
+                  Card(
+                    child: ListTile(
+                      title: const Text('Google Services'),
+                      trailing: TextButton(
+                        onPressed: () {},
+                        child: const Text('Link'),
+                      ),
+                    ),
+                  ),
+                  Card(
+                    child: ListTile(
+                      title: const Text('ID Card'),
+                      trailing: TextButton(
+                        onPressed: () {},
+                        child: const Text('Link'),
+                      ),
+                    ),
+                  ),
+                  Card(
+                    child: ListTile(
+                      title: const Text('Multifactor Auth Services'),
+                      trailing: TextButton(
+                        onPressed: () {},
+                        child: const Text('Link'),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: () async {
                       await authService.signOut();
