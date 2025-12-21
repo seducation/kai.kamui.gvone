@@ -99,7 +99,7 @@ class _PersistentChipState extends State<PersistentChip> {
   Future<void> _loadChipText() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _chipText = prefs.getString('chipText') ?? 'Your Text';
+      _chipText = prefs.getString('chipText') ?? 'Your location';
       _textController.text = _chipText;
     });
   }
