@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 
 import 'package:my_app/main.dart'; // To access the global 'cameras' list
 
+enum CameraMode { gallery, camera, live }
+
 class CameraScreen extends StatefulWidget {
   final VoidCallback? onClose;
   final VoidCallback? onImageUploaded;
@@ -24,6 +26,7 @@ class _CameraScreenState extends State<CameraScreen> {
   int _selectedCameraIndex = 0;
   bool _isUploading = false;
   String? _error;
+  CameraMode _selectedMode = CameraMode.camera;
 
   @override
   void initState() {
@@ -123,6 +126,42 @@ class _CameraScreenState extends State<CameraScreen> {
     _controller?.dispose();
     super.dispose();
   }
+  
+  void _showLiveOptions() {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              const TextField(
+                decoration: InputDecoration(
+                  labelText: 'Add Title',
+                ),
+              ),
+              const SizedBox(height: 10),
+              const TextField(
+                decoration: InputDecoration(
+                  labelText: 'Add Caption',
+                ),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  
+                  Navigator.pop(context);
+                },
+                child: const Text('Start Live'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -280,11 +319,23 @@ class _CameraScreenState extends State<CameraScreen> {
         // Mode Texts
         Row(
           children: [
-            _buildModeText("POST"),
+            GestureDetector(
+              onTap: () => setState(() => _selectedMode = CameraMode.gallery),
+              child: _buildModeText("Gallery", isActive: _selectedMode == CameraMode.gallery),
+            ),
             const SizedBox(width: 20),
-            _buildModeText("STORY", isActive: true),
+            GestureDetector(
+              onTap: () => setState(() => _selectedMode = CameraMode.camera),
+              child: _buildModeText("Camera", isActive: _selectedMode == CameraMode.camera),
+            ),
             const SizedBox(width: 20),
-            _buildModeText("REEL"),
+            GestureDetector(
+              onTap: () {
+                setState(() => _selectedMode = CameraMode.live);
+                _showLiveOptions();
+              },
+              child: _buildModeText("Live", isActive: _selectedMode == CameraMode.live),
+            ),
           ],
         ),
 
