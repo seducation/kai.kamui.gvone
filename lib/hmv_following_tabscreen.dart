@@ -108,9 +108,9 @@ class _HMVFollowingTabscreenState extends State<HMVFollowingTabscreen> {
 
         final postType = _getPostType(postTypeString, row.data['linkUrl']);
 
-        String? mediaUrl;
+        List<String> mediaUrls = [];
         if (fileIds.isNotEmpty) {
-          mediaUrl = appwriteService.getFileViewUrl(fileIds.first);
+          mediaUrls = fileIds.map((id) => appwriteService.getFileViewUrl(id)).toList();
         }
 
         final postStats = PostStats(
@@ -141,7 +141,7 @@ class _HMVFollowingTabscreenState extends State<HMVFollowingTabscreen> {
           timestamp:
               DateTime.tryParse(row.data['timestamp'] ?? '') ?? DateTime.now(),
           contentText: row.data['caption'] ?? '',
-          mediaUrl: mediaUrl,
+          mediaUrls: mediaUrls,
           type: postType,
           stats: postStats,
           linkUrl: row.data['linkUrl'],

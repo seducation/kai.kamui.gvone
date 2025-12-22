@@ -734,7 +734,7 @@ class AppwriteService {
               shares: postRow.data['shares'] ?? 0,
               views: postRow.data['views'] ?? 0,
             ),
-            mediaUrl: postRow.data['mediaUrl'],
+            mediaUrls: postRow.data['mediaUrls'] != null ? List<String>.from(postRow.data['mediaUrls']) : null,
             linkUrl: postRow.data['linkUrl'],
             linkTitle: postRow.data['linkTitle'],
             type: PostType.values.firstWhere(

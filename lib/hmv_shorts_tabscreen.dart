@@ -72,10 +72,10 @@ class _HMVShortsTabscreenState extends State<HMVShortsTabscreen> {
           return null;
         }
 
-        String? mediaUrl;
+        List<String> mediaUrls = [];
         final fileIds = row.data['file_ids'] as List?;
         if (fileIds != null && fileIds.isNotEmpty) {
-          mediaUrl = appwriteService.getFileViewUrl(fileIds.first);
+          mediaUrls = fileIds.map((id) => appwriteService.getFileViewUrl(id)).toList();
         }
 
         return Post(
@@ -85,7 +85,7 @@ class _HMVShortsTabscreenState extends State<HMVShortsTabscreen> {
           linkTitle: row.data['titles'] as String? ?? '',
           contentText: row.data['caption'] as String? ?? '',
           type: type,
-          mediaUrl: mediaUrl,
+          mediaUrls: mediaUrls,
           linkUrl: row.data['linkUrl'] as String?,
           stats: PostStats(
             likes: row.data['likes'] ?? 0,
@@ -175,8 +175,8 @@ class _ShortsPageState extends State<ShortsPage> {
     _commentCount = widget.post.stats.comments;
     _initializeState();
 
-    if (widget.post.mediaUrl != null) {
-      _controller = VideoPlayerController.networkUrl(Uri.parse(widget.post.mediaUrl!))
+    if (widget.post.mediaUrls != null && widget.post.mediaUrls!.isNotEmpty) {
+      _controller = VideoPlayerController.networkUrl(Uri.parse(widget.post.mediaUrls!.first))
         ..initialize().then((_) {
           if (mounted) {
             setState(() {});

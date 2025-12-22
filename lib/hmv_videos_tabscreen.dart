@@ -59,10 +59,10 @@ class _HMVVideosTabscreenState extends State<HMVVideosTabscreen> {
           return null;
         }
 
-        String? mediaUrl;
+        List<String> mediaUrls = [];
         final fileIds = row.data['file_ids'] as List?;
         if (fileIds != null && fileIds.isNotEmpty) {
-          mediaUrl = appwriteService.getFileViewUrl(fileIds.first);
+          mediaUrls = fileIds.map((id) => appwriteService.getFileViewUrl(id)).toList();
         }
 
         return Post(
@@ -72,7 +72,7 @@ class _HMVVideosTabscreenState extends State<HMVVideosTabscreen> {
           linkTitle: row.data['titles'] as String? ?? '',
           contentText: row.data['caption'] as String? ?? '',
           type: type,
-          mediaUrl: mediaUrl,
+          mediaUrls: mediaUrls,
           linkUrl: row.data['linkUrl'] as String?,
           stats: PostStats(
             likes: row.data['likes'] ?? 0,
