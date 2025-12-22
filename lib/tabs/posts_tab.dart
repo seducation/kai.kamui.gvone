@@ -113,6 +113,9 @@ class _PostsTabState extends State<PostsTab> {
       }).where((post) => post != null).cast<Post>().toList();
 
       if (!mounted) return;
+      
+      posts.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      
       setState(() {
         _posts = posts;
         _isLoading = false;
