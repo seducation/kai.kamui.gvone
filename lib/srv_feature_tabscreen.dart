@@ -71,11 +71,11 @@ class SrvFeatureTabscreen extends StatelessWidget {
                       (originalAuthorIds?.isNotEmpty ?? false) ? originalAuthorIds!.first as String? : null;
                   
                   PostType type = PostType.text;
-                  String? mediaUrl;
+                  List<String> mediaUrls = [];
                   final fileIds = postData['file_ids'] as List?;
                   if (fileIds != null && fileIds.isNotEmpty) {
                     type = PostType.image; // Assuming image for now, could be video
-                    mediaUrl = appwriteService.getFileViewUrl(fileIds.first);
+                    mediaUrls = fileIds.map((id) => appwriteService.getFileViewUrl(id)).toList();
                   }
 
                   if (originalAuthorId != null &&
@@ -109,7 +109,7 @@ class SrvFeatureTabscreen extends StatelessWidget {
                           ),
                           authorIds: (postData['author_id'] as List<dynamic>?)?.map((e) => e as String).toList(),
                           profileIds: (postData['profile_id'] as List<dynamic>?)?.map((e) => e as String).toList(),
-                          mediaUrl: mediaUrl,
+                          mediaUrls: mediaUrls,
                           linkUrl: postData['linkUrl'] as String?,
                           linkTitle: postData['titles'] as String? ?? '',
                           type: type,
@@ -132,7 +132,7 @@ class SrvFeatureTabscreen extends StatelessWidget {
                       ),
                       authorIds: (postData['author_id'] as List<dynamic>?)?.map((e) => e as String).toList(),
                       profileIds: (postData['profile_id'] as List<dynamic>?)?.map((e) => e as String).toList(),
-                      mediaUrl: mediaUrl,
+                      mediaUrls: mediaUrls,
                       linkUrl: postData['linkUrl'] as String?,
                       linkTitle: postData['titles'] as String? ?? '',
                       type: type,

@@ -41,10 +41,14 @@ class _VideosTabState extends State<VideosTab> {
       final profilesMap = {for (var doc in profilesResponse.rows) doc.$id: doc.data};
 
       final posts = postsResponse.rows.map((row) {
-        final creatorProfileData = profilesMap[row.data['profile_id']];
+        final profileIds = row.data['profile_id'] as List?;
+        final profileId = (profileIds?.isNotEmpty ?? false) ? profileIds!.first as String? : null;
+        if (profileId == null) return null;
+
+        final creatorProfileData = profilesMap[profileId];
         if (creatorProfileData == null) return null;
 
-        final author = Profile.fromMap(creatorProfileData, row.data['profile_id']);
+        final author = Profile.fromMap(creatorProfileData, profileId);
 
         final updatedAuthor = Profile(
           id: author.id,
@@ -64,10 +68,13 @@ class _VideosTabState extends State<VideosTab> {
         String? postTypeString = row.data['type'];
         final postType = _getPostType(postTypeString);
 
-        String? mediaUrl;
+        if (postType != PostType.video) {
+          return null;
+        }
 
+        List<String> mediaUrls = [];
         if (fileIds.isNotEmpty) {
-            mediaUrl = _appwriteService.getFileViewUrl(fileIds.first);
+            mediaUrls = fileIds.map((id) => _appwriteService.getFileViewUrl(id)).toList();
         }
 
         final postStats = PostStats(
@@ -76,19 +83,38 @@ class _VideosTabState extends State<VideosTab> {
           shares: row.data['shares'] ?? 0,
           views: row.data['views'] ?? 0,
         );
+        
+        final originalAuthorIds = row.data['author_id'] as List?;
+        final originalAuthorId = (originalAuthorIds?.isNotEmpty ?? false) ? originalAuthorIds!.first as String? : null;
+
+        Profile? originalAuthor;
+        if (originalAuthorId != null && originalAuthorId != profileId) {
+            final originalAuthorProfileData = profilesMap[originalAuthorId];
+            if (originalAuthorProfileData != null) {
+                originalAuthor = Profile.fromMap(originalAuthorProfileData, originalAuthorId);
+            }
+        }
 
         return Post(
           id: row.$id,
           author: updatedAuthor,
+          originalAuthor: originalAuthor,
           timestamp: DateTime.tryParse(row.data['timestamp'] ?? '') ?? DateTime.now(),
           contentText: row.data['caption'] ?? '',
-          mediaUrl: mediaUrl,
+          mediaUrls: mediaUrls,
           type: postType,
           stats: postStats,
+          linkUrl: row.data['linkUrl'],
+          linkTitle: row.data['titles'],
+          authorIds: (row.data['author_id'] as List<dynamic>?)?.map((e) => e as String).toList(),
+          profileIds: (row.data['profile_id'] as List<dynamic>?)?.map((e) => e as String).toList(),
         );
-      }).where((post) => post != null && post.type == PostType.video).cast<Post>().toList();
+      }).where((post) => post != null).cast<Post>().toList();
       
       if (!mounted) return;
+      
+      posts.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
       setState(() {
         _videoPosts = posts;
         _isLoading = false;

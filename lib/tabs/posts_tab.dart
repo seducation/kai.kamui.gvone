@@ -73,9 +73,9 @@ class _PostsTabState extends State<PostsTab> {
 
         final postType = _getPostType(postTypeString, row.data['linkUrl']);
 
-        String? mediaUrl;
+        List<String> mediaUrls = [];
         if (fileIds.isNotEmpty) {
-          mediaUrl = _appwriteService.getFileViewUrl(fileIds.first);
+          mediaUrls = fileIds.map((id) => _appwriteService.getFileViewUrl(id)).toList();
         }
 
         final postStats = PostStats(
@@ -102,7 +102,7 @@ class _PostsTabState extends State<PostsTab> {
           originalAuthor: originalAuthor,
           timestamp: DateTime.tryParse(row.data['timestamp'] ?? '') ?? DateTime.now(),
           contentText: row.data['caption'] ?? '',
-          mediaUrl: mediaUrl,
+          mediaUrls: mediaUrls,
           type: postType,
           stats: postStats,
           linkUrl: row.data['linkUrl'],

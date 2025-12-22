@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/model/post.dart';
-import 'package:my_app/tabs/home_tab.dart';
 
 class PostDetailScreen extends StatefulWidget {
   final Post post;
@@ -74,7 +73,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                     children: [
                       CircleAvatar(
                         radius: 20,
-                        backgroundImage: NetworkImage(widget.post.author.avatarUrl),
+                        backgroundImage: NetworkImage(widget.post.author.profileImageUrl ?? ''),
                       ),
                       const SizedBox(width: 12),
                       Text(

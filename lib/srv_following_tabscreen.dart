@@ -114,11 +114,11 @@ class _SrvFollowingTabscreenState extends State<SrvFollowingTabscreen> {
 
 
         PostType type = PostType.text;
-        String? mediaUrl;
+        List<String> mediaUrls = [];
         final fileIds = row.data['file_ids'] as List?;
         if (fileIds != null && fileIds.isNotEmpty) {
           type = PostType.image; // Assuming image for now, could be video
-          mediaUrl = appwriteService.getFileViewUrl(fileIds.first);
+          mediaUrls = fileIds.map((id) => appwriteService.getFileViewUrl(id)).toList();
         }
 
         final originalAuthorIds = row.data['author_id'] as List?;
@@ -140,7 +140,7 @@ class _SrvFollowingTabscreenState extends State<SrvFollowingTabscreen> {
           linkTitle: row.data['titles'] as String? ?? '',
           contentText: row.data['caption'] ?? '',
           type: type,
-          mediaUrl: mediaUrl,
+          mediaUrls: mediaUrls,
           linkUrl: row.data['linkUrl'] as String?,
           stats: PostStats(
             likes: row.data['likes'] ?? 0,
