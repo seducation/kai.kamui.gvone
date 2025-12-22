@@ -27,6 +27,7 @@ class AppwriteService {
   static const String productsCollection = "products";
   static const String playlistsCollection = "playlists";
   static const String storiesCollection = "stories";
+  static const String postReportsCollection = "post_reports";
 
   AppwriteService(this._client) {
     _db = TablesDB(_client);
@@ -397,14 +398,43 @@ class AppwriteService {
     return _db.listRows(
       databaseId: Environment.appwriteDatabaseId,
       tableId: postsCollection,
+      queries: [Query.equal('isHidden', false), Query.equal('status', 'active')],
     );
+  }
+
+  Future<void> reportPost({
+    required String postId,
+    required String reportedBy,
+    required String reason,
+  }) async {
+    try {
+      final result = await _functions.createExecution(
+        functionId: 'report-post',
+        body: jsonEncode({
+          'postId': postId,
+          'reportedBy': reportedBy,
+          'reason': reason,
+        }),
+      );
+      final response = jsonDecode(result.responseBody);
+      if (!response['success']) {
+        throw AppwriteException(response['message']);
+      }
+    } on AppwriteException catch (e) {
+      log('Error reporting post: ${e.message}');
+      rethrow;
+    }
   }
 
   Future<models.RowList> getPostsFromUsers(List<dynamic> profileIds) async {
     return _db.listRows(
       databaseId: Environment.appwriteDatabaseId,
       tableId: postsCollection,
-      queries: [Query.equal('profile_id', profileIds)],
+      queries: [
+        Query.equal('profile_id', profileIds),
+        Query.equal('isHidden', false),
+        Query.equal('status', 'active'),
+      ],
     );
   }
 
@@ -419,6 +449,9 @@ class AppwriteService {
       ...postData,
       'timestamp': DateTime.now().toIso8601String(),
       'author_id': postData['author_id'],
+      'reportCount': 0,
+      'isHidden': false,
+      'status': 'active',
     };
 
     await _db.createRow(
@@ -563,17 +596,29 @@ class AppwriteService {
       _db.listRows(
         databaseId: Environment.appwriteDatabaseId,
         tableId: postsCollection,
-        queries: [Query.search('caption', query)],
+        queries: [
+          Query.search('caption', query),
+          Query.equal('isHidden', false),
+          Query.equal('status', 'active'),
+        ],
       ),
       _db.listRows(
         databaseId: Environment.appwriteDatabaseId,
         tableId: postsCollection,
-        queries: [Query.search('titles', query)],
+        queries: [
+          Query.search('titles', query),
+          Query.equal('isHidden', false),
+          Query.equal('status', 'active'),
+        ],
       ),
       _db.listRows(
         databaseId: Environment.appwriteDatabaseId,
         tableId: postsCollection,
-        queries: [Query.search('tags', query)],
+        queries: [
+          Query.search('tags', query),
+          Query.equal('isHidden', false),
+          Query.equal('status', 'active'),
+        ],
       ),
     ]);
 
@@ -763,6 +808,7 @@ class AppwriteService {
       final posts = <Post>[];
       for (final postRow in postRows) {
         try {
+          if (postRow.data['isHidden'] == true) continue;
           final profile = await getProfile(postRow.data['profile_id']);
           final author = Profile.fromRow(profile);
 

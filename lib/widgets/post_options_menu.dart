@@ -88,10 +88,19 @@ class PostOptionsMenu extends StatelessWidget {
                   leading: Icon(Icons.not_interested),
                   title: Text('Not Interested'),
                 ),
-                const ListTile(
-                  leading: Icon(Icons.warning),
-                  title: Text('NSFW Content'),
-                ),
+                if (!isOwner)
+                  ListTile(
+                    leading: const Icon(Icons.flag_outlined),
+                    title: const Text('Report'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      showDialog(
+                        context: context,
+                        builder: (context) =>
+                            _ReportPostDialog(post: post),
+                      );
+                    },
+                  ),
               ],
             );
           },
@@ -125,6 +134,98 @@ class _DeletePostDialog extends StatelessWidget {
             Navigator.of(context).pop();
           },
           child: const Text('Yes'),
+        ),
+      ],
+    );
+  }
+}
+
+class _ReportPostDialog extends StatefulWidget {
+  final Post post;
+
+  const _ReportPostDialog({required this.post});
+
+  @override
+  State<_ReportPostDialog> createState() => _ReportPostDialogState();
+}
+
+class _ReportPostDialogState extends State<_ReportPostDialog> {
+  String? _selectedReason;
+  final _reasons = [
+    'Nudity or sexual activity',
+    'Hate speech or symbols',
+    'Bullying or harassment',
+    'Scam or fraud',
+    'False information',
+    'I just don\'t like it',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Report Post'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Why are you reporting this post?'),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8.0,
+            runSpacing: 4.0,
+            children: _reasons.map((reason) {
+              return ChoiceChip(
+                label: Text(reason),
+                selected: _selectedReason == reason,
+                onSelected: (selected) {
+                  setState(() {
+                    _selectedReason = selected ? reason : null;
+                  });
+                },
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: _selectedReason == null
+              ? null
+              : () async {
+                  final appwriteService =
+                      Provider.of<AppwriteService>(context, listen: false);
+                  final authService =
+                      Provider.of<AuthService>(context, listen: false);
+                  final user = authService.currentUser!;
+                  final navigator = Navigator.of(context);
+                  final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+                  try {
+                    await appwriteService.reportPost(
+                      postId: widget.post.id,
+                      reportedBy: user.id,
+                      reason: _selectedReason!,
+                    );
+                    navigator.pop();
+                    scaffoldMessenger.showSnackBar(
+                      const SnackBar(
+                        content: Text('Post reported'),
+                      ),
+                    );
+                  } catch (error) {
+                    navigator.pop();
+                    scaffoldMessenger.showSnackBar(
+                      SnackBar(
+                        content: Text(error.toString()),
+                      ),
+                    );
+                  }
+                },
+          child: const Text('Report'),
         ),
       ],
     );
