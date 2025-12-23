@@ -8,7 +8,10 @@ import 'widgets/post_item.dart';
 
 double calculateScore(Post post) {
   final hoursSincePosted = DateTime.now().difference(post.timestamp).inHours;
-  final score = ((post.stats.likes * 1) + (post.stats.comments * 5) + (post.stats.shares * 10)) /
+  final score =
+      ((post.stats.likes * 1) +
+          (post.stats.comments * 5) +
+          (post.stats.shares * 10)) /
       pow(hoursSincePosted + 2, 1.5);
   return score;
 }
@@ -36,66 +39,94 @@ class _HMVFeaturesTabscreenState extends State<HMVFeaturesTabscreen> {
   Future<void> _fetchData() async {
     try {
       final user = await _appwriteService.getUser();
-      if(user != null){
-        final profiles = await _appwriteService.getUserProfiles(ownerId: user.$id);
-        if(profiles.rows.isNotEmpty){
-           _profileId = profiles.rows.first.$id;
+      if (user != null) {
+        final profiles = await _appwriteService.getUserProfiles(
+          ownerId: user.$id,
+        );
+        if (profiles.rows.isNotEmpty) {
+          _profileId = profiles.rows.first.$id;
         }
       }
       final postsResponse = await _appwriteService.getPosts();
+      debugPrint(
+        'HMVFeaturesTabscreen: Fetched ${postsResponse.rows.length} posts raw.',
+      );
       final profilesResponse = await _appwriteService.getProfiles();
+      debugPrint(
+        'HMVFeaturesTabscreen: Fetched ${profilesResponse.rows.length} profiles.',
+      );
 
-      final profilesMap = {for (var p in profilesResponse.rows) p.$id: Profile.fromMap(p.data, p.$id)};
+      final profilesMap = {
+        for (var p in profilesResponse.rows)
+          p.$id: Profile.fromMap(p.data, p.$id),
+      };
 
-      final posts = postsResponse.rows.map((row) {
-        final isHidden = row.data['isHidden'] as bool? ?? false;
-        if (isHidden) {
-          return null;
-        }
+      final posts = postsResponse.rows
+          .map((row) {
+            final isHidden = row.data['isHidden'] as bool? ?? false;
+            if (isHidden) {
+              return null;
+            }
 
-        final profileIds = row.data['profile_id'] as List?;
-        final profileId = (profileIds?.isNotEmpty ?? false) ? profileIds!.first as String? : null;
-        final author = profilesMap[profileId];
+            final profileIds = row.data['profile_id'] as List?;
+            final profileId = (profileIds?.isNotEmpty ?? false)
+                ? profileIds!.first as String?
+                : null;
+            final author = profilesMap[profileId];
 
-        if (author == null) {
-          return null;
-        }
+            if (author == null) {
+              debugPrint(
+                'HMVFeaturesTabscreen: Post ${row.$id} filtered. ProfileId: $profileId not found in profiles map.',
+              );
+              return null;
+            }
 
-        PostType type = PostType.text;
-        List<String> mediaUrls = [];
-        final fileIds = row.data['file_ids'] as List?;
-        if (fileIds != null && fileIds.isNotEmpty) {
-          type = PostType.image;
-          mediaUrls = fileIds.map((id) => _appwriteService.getFileViewUrl(id)).toList();
-        }
+            PostType type = PostType.text;
+            List<String> mediaUrls = [];
+            final fileIds = row.data['file_ids'] as List?;
+            if (fileIds != null && fileIds.isNotEmpty) {
+              type = PostType.image;
+              mediaUrls = fileIds
+                  .map((id) => _appwriteService.getFileViewUrl(id))
+                  .toList();
+            }
 
-        return Post(
-          id: row.$id,
-          author: author,
-          timestamp: DateTime.tryParse(row.data['timestamp'] ?? '') ?? DateTime.now(),
-          linkTitle: row.data['titles'] as String? ?? '',
-          contentText: row.data['caption'] as String? ?? '',
-          type: type,
-          mediaUrls: mediaUrls,
-          linkUrl: row.data['linkUrl'] as String?,
-          stats: PostStats(
-            likes: row.data['likes'] ?? 0,
-            comments: row.data['comments'] ?? 0,
-            shares: row.data['shares'] ?? 0,
-            views: row.data['views'] ?? 0,
-          ),
+            return Post(
+              id: row.$id,
+              author: author,
+              timestamp:
+                  DateTime.tryParse(row.data['timestamp'] ?? '') ??
+                  DateTime.now(),
+              linkTitle: row.data['titles'] as String? ?? '',
+              contentText: row.data['caption'] as String? ?? '',
+              type: type,
+              mediaUrls: mediaUrls,
+              linkUrl: row.data['linkUrl'] as String?,
+              stats: PostStats(
+                likes: row.data['likes'] ?? 0,
+                comments: row.data['comments'] ?? 0,
+                shares: row.data['shares'] ?? 0,
+                views: row.data['views'] ?? 0,
+              ),
+            );
+          })
+          .whereType<Post>()
+          .toList();
+
+      if (mounted) {
+        debugPrint(
+          'HMVFeaturesTabscreen: Setting state with ${posts.length} valid posts.',
         );
-      }).whereType<Post>().toList();
-
-      if(mounted){
         setState(() {
           _posts = posts;
           _isLoading = false;
         });
       }
       _rankPosts();
-    } catch (e) {
-       if(mounted){
+    } catch (e, stackTrace) {
+      debugPrint('Error fetching data in HMVFeaturesTabscreen: $e');
+      debugPrint('Stack trace: $stackTrace');
+      if (mounted) {
         setState(() {
           _isLoading = false;
         });
