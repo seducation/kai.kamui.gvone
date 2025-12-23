@@ -37,6 +37,10 @@ class _HMVFeaturesTabscreenState extends State<HMVFeaturesTabscreen> {
   }
 
   Future<void> _fetchData() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+    });
     try {
       final user = await _appwriteService.getUser();
       if (user != null) {
@@ -47,17 +51,24 @@ class _HMVFeaturesTabscreenState extends State<HMVFeaturesTabscreen> {
           _profileId = profiles.rows.first.$id;
         }
       }
-      final postsResponse = await _appwriteService.getPosts();
+
+      final results = await Future.wait([
+        _appwriteService.getPosts(),
+        _appwriteService.getProfiles(),
+      ]);
+
+      final postsResponse = results[0];
+      final profilesResponse = results[1];
+      
       debugPrint(
         'HMVFeaturesTabscreen: Fetched ${postsResponse.rows.length} posts raw.',
       );
-      final profilesResponse = await _appwriteService.getProfiles();
       debugPrint(
         'HMVFeaturesTabscreen: Fetched ${profilesResponse.rows.length} profiles.',
       );
 
       final profilesMap = {
-        for (var p in profilesResponse.rows) p.$id: p.data,
+        for (var doc in profilesResponse.rows) doc.$id: doc.data,
       };
 
       final posts = postsResponse.rows
@@ -71,22 +82,10 @@ class _HMVFeaturesTabscreenState extends State<HMVFeaturesTabscreen> {
             final profileId = (profileIds?.isNotEmpty ?? false)
                 ? profileIds!.first as String?
                 : null;
-            
-            if (profileId == null) {
-              debugPrint(
-                'HMVFeaturesTabscreen: Post ${row.$id} filtered. profileId is null. Data: ${row.data}',
-              );
-              return null;
-            }
+            if (profileId == null) return null;
 
             final creatorProfileData = profilesMap[profileId];
-
-            if (creatorProfileData == null) {
-              debugPrint(
-                'HMVFeaturesTabscreen: Post ${row.$id} filtered. ProfileId: $profileId not found in profiles map.',
-              );
-              return null;
-            }
+            if (creatorProfileData == null) return null;
 
             final author = Profile.fromMap(creatorProfileData, profileId);
 
@@ -102,6 +101,32 @@ class _HMVFeaturesTabscreenState extends State<HMVFeaturesTabscreen> {
                   : 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png',
               ownerId: author.ownerId,
               createdAt: author.createdAt,
+            );
+
+            final fileIdsData = row.data['file_ids'];
+            final List<String> fileIds = fileIdsData is List
+                ? List<String>.from(fileIdsData.map((id) => id.toString()))
+                : [];
+
+            String? postTypeString = row.data['type'];
+            if (postTypeString == null && fileIds.isNotEmpty) {
+              postTypeString = 'image'; // Infer type for old data
+            }
+
+            final postType = _getPostType(postTypeString, row.data['linkUrl']);
+
+            List<String> mediaUrls = [];
+            if (fileIds.isNotEmpty) {
+              mediaUrls = fileIds
+                  .map((id) => _appwriteService.getFileViewUrl(id))
+                  .toList();
+            }
+
+            final postStats = PostStats(
+              likes: row.data['likes'] ?? 0,
+              comments: row.data['comments'] ?? 0,
+              shares: row.data['shares'] ?? 0,
+              views: row.data['views'] ?? 0,
             );
 
             final originalAuthorIds = row.data['author_id'] as List?;
@@ -120,16 +145,6 @@ class _HMVFeaturesTabscreenState extends State<HMVFeaturesTabscreen> {
               }
             }
 
-            PostType type = PostType.text;
-            List<String> mediaUrls = [];
-            final fileIds = row.data['file_ids'] as List?;
-            if (fileIds != null && fileIds.isNotEmpty) {
-              type = PostType.image;
-              mediaUrls = fileIds
-                  .map((id) => _appwriteService.getFileViewUrl(id))
-                  .toList();
-            }
-
             return Post(
               id: row.$id,
               author: updatedAuthor,
@@ -137,31 +152,34 @@ class _HMVFeaturesTabscreenState extends State<HMVFeaturesTabscreen> {
               timestamp:
                   DateTime.tryParse(row.data['timestamp'] ?? '') ??
                   DateTime.now(),
-              linkTitle: row.data['titles'] as String? ?? '',
-              contentText: row.data['caption'] as String? ?? '',
-              type: type,
+              contentText: row.data['caption'] ?? '',
               mediaUrls: mediaUrls,
-              linkUrl: row.data['linkUrl'] as String?,
-              stats: PostStats(
-                likes: row.data['likes'] ?? 0,
-                comments: row.data['comments'] ?? 0,
-                shares: row.data['shares'] ?? 0,
-                views: row.data['views'] ?? 0,
-              ),
+              type: postType,
+              stats: postStats,
+              linkUrl: row.data['linkUrl'],
+              linkTitle: row.data['titles'],
+              authorIds: (row.data['author_id'] as List<dynamic>?)
+                  ?.map((e) => e as String)
+                  .toList(),
+              profileIds: (row.data['profile_id'] as List<dynamic>?)
+                  ?.map((e) => e as String)
+                  .toList(),
             );
           })
-          .whereType<Post>()
+          .where((post) => post != null)
+          .cast<Post>()
           .toList();
 
-      if (mounted) {
-        debugPrint(
+      if (!mounted) return;
+      
+      debugPrint(
           'HMVFeaturesTabscreen: Setting state with ${posts.length} valid posts.',
         );
-        setState(() {
-          _posts = posts;
-          _isLoading = false;
-        });
-      }
+
+      setState(() {
+        _posts = posts;
+        _isLoading = false;
+      });
       _rankPosts();
     } catch (e, stackTrace) {
       debugPrint('Error fetching data in HMVFeaturesTabscreen: $e');
@@ -174,11 +192,30 @@ class _HMVFeaturesTabscreenState extends State<HMVFeaturesTabscreen> {
     }
   }
 
+  PostType _getPostType(String? type, String? linkUrl) {
+    if (linkUrl != null && linkUrl.isNotEmpty) {
+      return PostType.linkPreview;
+    }
+    switch (type) {
+      case 'image':
+        return PostType.image;
+      case 'video':
+        return PostType.video;
+      default:
+        return PostType.text;
+    }
+  }
+
   void _rankPosts() {
-    for (var post in _posts) {
+    if (!mounted) return;
+    final rankedPosts = List<Post>.from(_posts);
+    for (var post in rankedPosts) {
       post.score = calculateScore(post);
     }
-    _posts.sort((a, b) => b.score.compareTo(a.score));
+    rankedPosts.sort((a, b) => b.score.compareTo(a.score));
+    setState(() {
+      _posts = rankedPosts;
+    });
   }
 
   @override
