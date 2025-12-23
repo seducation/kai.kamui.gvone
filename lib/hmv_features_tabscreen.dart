@@ -59,7 +59,7 @@ class _HMVFeaturesTabscreenState extends State<HMVFeaturesTabscreen> {
 
       final postsResponse = results[0];
       final profilesResponse = results[1];
-      
+
       debugPrint(
         'HMVFeaturesTabscreen: Fetched ${postsResponse.rows.length} posts raw.',
       );
@@ -71,110 +71,112 @@ class _HMVFeaturesTabscreenState extends State<HMVFeaturesTabscreen> {
         for (var doc in profilesResponse.rows) doc.$id: doc.data,
       };
 
-      final posts = postsResponse.rows
-          .map((row) {
-            final isHidden = row.data['isHidden'] as bool? ?? false;
-            if (isHidden) {
-              return null;
-            }
+      final posts = postsResponse.rows.map((row) {
+        final isHidden = row.data['isHidden'] as bool? ?? false;
+        if (isHidden) {
+          return null;
+        }
 
-            final profileIds = row.data['profile_id'] as List?;
-            final profileId = (profileIds?.isNotEmpty ?? false)
-                ? profileIds!.first as String?
+        final profileIdsList = row.data['profile_id'] as List?;
+        final primaryProfileId =
+            (profileIdsList?.isNotEmpty ?? false)
+                ? profileIdsList!.first as String?
                 : null;
-            if (profileId == null) return null;
 
-            final creatorProfileData = profilesMap[profileId];
-            if (creatorProfileData == null) return null;
+        final authorIdsList = row.data['author_id'] as List?;
+        final originalAuthorId =
+            (authorIdsList?.isNotEmpty ?? false)
+                ? authorIdsList!.first as String?
+                : null;
 
-            final author = Profile.fromMap(creatorProfileData, profileId);
+        final mainAuthorId = primaryProfileId ?? originalAuthorId;
 
-            final updatedAuthor = Profile(
-              id: author.id,
-              name: author.name,
-              type: author.type,
-              bio: author.bio,
-              profileImageUrl:
-                  author.profileImageUrl != null &&
-                      author.profileImageUrl!.isNotEmpty
-                  ? _appwriteService.getFileViewUrl(author.profileImageUrl!)
-                  : 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png',
-              ownerId: author.ownerId,
-              createdAt: author.createdAt,
-            );
+        if (mainAuthorId == null) {
+          return null;
+        }
 
-            final fileIdsData = row.data['file_ids'];
-            final List<String> fileIds = fileIdsData is List
+        final mainAuthorProfileData = profilesMap[mainAuthorId];
+        if (mainAuthorProfileData == null) {
+          return null;
+        }
+
+        final author = Profile.fromMap(mainAuthorProfileData, mainAuthorId);
+        final updatedAuthor = Profile(
+            id: author.id,
+            name: author.name,
+            type: author.type,
+            bio: author.bio,
+            profileImageUrl:
+                author.profileImageUrl != null && author.profileImageUrl!.isNotEmpty
+                    ? _appwriteService.getFileViewUrl(author.profileImageUrl!)
+                    : 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png',
+            ownerId: author.ownerId,
+            createdAt: author.createdAt);
+
+        Profile? finalOriginalAuthor;
+        if (primaryProfileId != null &&
+            originalAuthorId != null &&
+            primaryProfileId != originalAuthorId) {
+          final originalAuthorProfileData = profilesMap[originalAuthorId];
+          if (originalAuthorProfileData != null) {
+            finalOriginalAuthor =
+                Profile.fromMap(originalAuthorProfileData, originalAuthorId);
+          }
+        }
+
+        final fileIdsData = row.data['file_ids'];
+        final List<String> fileIds =
+            fileIdsData is List
                 ? List<String>.from(fileIdsData.map((id) => id.toString()))
                 : [];
 
-            String? postTypeString = row.data['type'];
-            if (postTypeString == null && fileIds.isNotEmpty) {
-              postTypeString = 'image'; // Infer type for old data
-            }
+        String? postTypeString = row.data['type'];
+        if (postTypeString == null && fileIds.isNotEmpty) {
+          postTypeString = 'image'; // Infer type for old data
+        }
 
-            final postType = _getPostType(postTypeString, row.data['linkUrl']);
+        final postType = _getPostType(postTypeString, row.data['linkUrl']);
 
-            List<String> mediaUrls = [];
-            if (fileIds.isNotEmpty) {
-              mediaUrls = fileIds
-                  .map((id) => _appwriteService.getFileViewUrl(id))
-                  .toList();
-            }
+        List<String> mediaUrls = [];
+        if (fileIds.isNotEmpty) {
+          mediaUrls = fileIds
+              .map((id) => _appwriteService.getFileViewUrl(id))
+              .toList();
+        }
 
-            final postStats = PostStats(
-              likes: row.data['likes'] ?? 0,
-              comments: row.data['comments'] ?? 0,
-              shares: row.data['shares'] ?? 0,
-              views: row.data['views'] ?? 0,
-            );
+        final postStats = PostStats(
+          likes: row.data['likes'] ?? 0,
+          comments: row.data['comments'] ?? 0,
+          shares: row.data['shares'] ?? 0,
+          views: row.data['views'] ?? 0,
+        );
 
-            final originalAuthorIds = row.data['author_id'] as List?;
-            final originalAuthorId = (originalAuthorIds?.isNotEmpty ?? false)
-                ? originalAuthorIds!.first as String?
-                : null;
-
-            Profile? originalAuthor;
-            if (originalAuthorId != null && originalAuthorId != profileId) {
-              final originalAuthorProfileData = profilesMap[originalAuthorId];
-              if (originalAuthorProfileData != null) {
-                originalAuthor = Profile.fromMap(
-                  originalAuthorProfileData,
-                  originalAuthorId,
-                );
-              }
-            }
-
-            return Post(
-              id: row.$id,
-              author: updatedAuthor,
-              originalAuthor: originalAuthor,
-              timestamp:
-                  DateTime.tryParse(row.data['timestamp'] ?? '') ??
-                  DateTime.now(),
-              contentText: row.data['caption'] ?? '',
-              mediaUrls: mediaUrls,
-              type: postType,
-              stats: postStats,
-              linkUrl: row.data['linkUrl'],
-              linkTitle: row.data['titles'],
-              authorIds: (row.data['author_id'] as List<dynamic>?)
-                  ?.map((e) => e as String)
-                  .toList(),
-              profileIds: (row.data['profile_id'] as List<dynamic>?)
-                  ?.map((e) => e as String)
-                  .toList(),
-            );
-          })
-          .where((post) => post != null)
-          .cast<Post>()
-          .toList();
+        return Post(
+          id: row.$id,
+          author: updatedAuthor,
+          originalAuthor: finalOriginalAuthor,
+          timestamp:
+              DateTime.tryParse(row.data['timestamp'] ?? '') ?? DateTime.now(),
+          contentText: row.data['caption'] ?? '',
+          mediaUrls: mediaUrls,
+          type: postType,
+          stats: postStats,
+          linkUrl: row.data['linkUrl'],
+          linkTitle: row.data['titles'],
+          authorIds: (row.data['author_id'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList(),
+          profileIds: (row.data['profile_id'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList(),
+        );
+      }).whereType<Post>().toList();
 
       if (!mounted) return;
-      
+
       debugPrint(
-          'HMVFeaturesTabscreen: Setting state with ${posts.length} valid posts.',
-        );
+        'HMVFeaturesTabscreen: Setting state with ${posts.length} valid posts.',
+      );
 
       setState(() {
         _posts = posts;
