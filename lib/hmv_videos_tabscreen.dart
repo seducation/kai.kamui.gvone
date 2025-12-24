@@ -212,14 +212,15 @@ class _HmvVideosTabScreenState extends State<HmvVideosTabScreen> {
   }
 
   PostType _getPostType(String? type, String? linkUrl) {
+    if (type == 'video') {
+      return PostType.video;
+    }
     if (linkUrl != null && linkUrl.isNotEmpty) {
       return PostType.linkPreview;
     }
     switch (type) {
       case 'image':
         return PostType.image;
-      case 'video':
-        return PostType.video;
       default:
         return PostType.text;
     }

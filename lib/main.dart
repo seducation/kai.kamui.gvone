@@ -63,7 +63,7 @@ Future<void> main() async {
   runApp(
     MultiProvider(
       providers: [
-        Provider<Client>.value(value: client),
+
         Provider(create: (_) => AppwriteService(client)),
         ChangeNotifierProvider.value(value: authService),
         ChangeNotifierProvider(create: (_) => ThemeModel()),
