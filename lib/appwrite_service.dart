@@ -566,7 +566,9 @@ class AppwriteService {
 
   Future<models.File> getFile(String fileId) async {
     return _storage.getFile(
-        bucketId: Environment.appwriteStorageBucketId, fileId: fileId);
+      bucketId: Environment.appwriteStorageBucketId,
+      fileId: fileId,
+    );
   }
 
   Future<models.RowList> searchPosts({required String query}) async {
