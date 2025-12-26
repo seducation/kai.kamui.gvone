@@ -28,7 +28,7 @@ class _DashboardWidgetState extends State<DashboardWidget> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
-          _buildFollowerCard(),
+          _buildkarmaCard(),
           const SizedBox(width: 12),
           _buildDashboardStat("Following", followingCount),
           const SizedBox(width: 12),
@@ -52,7 +52,7 @@ class _DashboardWidgetState extends State<DashboardWidget> {
     );
   }
 
-  Widget _buildFollowerCard() {
+  Widget _buildkarmaCard() {
     return Container(
       width: 180,
       height: 110,
@@ -69,7 +69,7 @@ class _DashboardWidgetState extends State<DashboardWidget> {
           Row(
             children: [
               const Text(
-                "Follower",
+                "karma",
                 style: TextStyle(
                   color: Colors.black87,
                   fontWeight: FontWeight.bold,
