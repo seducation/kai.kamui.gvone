@@ -1,12 +1,10 @@
 import 'package:appwrite/appwrite.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:appwrite/models.dart' as models;
 import 'package:flutter/material.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:go_router/go_router.dart';
-// import 'package:image_picker/image_picker.dart'; // Removed unused import
 import 'package:my_app/appwrite_service.dart';
 import 'package:my_app/camera_screen.dart'; // Added import
+import 'package:my_app/lens_screen/staggered_grid.dart';
 import 'package:my_app/webview_screen.dart';
 import 'package:provider/provider.dart';
 
@@ -175,73 +173,7 @@ class _LensScreenState extends State<LensScreen> {
             ),
           SliverPadding(
             padding: const EdgeInsets.all(4.0),
-            sliver: SliverGrid(
-              gridDelegate: SliverQuiltedGridDelegate(
-                crossAxisCount: 2,
-                mainAxisSpacing: 4,
-                crossAxisSpacing: 4,
-                pattern: const [
-                  QuiltedGridTile(2, 2),
-                  QuiltedGridTile(1, 1),
-                  QuiltedGridTile(1, 1),
-                ],
-              ),
-              delegate: SliverChildBuilderDelegate((context, index) {
-                final item = _items[index];
-                final isBigTile = (index % 3) == 0;
-                return GestureDetector(
-                  onTap: () {
-                    if (item.data['link'] != null) {
-                      // Using 'link' field
-                      _launchUrl(item.data['link']);
-                    }
-                  },
-                  child: Card(
-                    clipBehavior: Clip.antiAlias,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (item.data['imageUrl'] != null)
-                          Expanded(
-                            child: CachedNetworkImage(
-                              imageUrl: item.data['imageUrl'],
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) => const Center(
-                                child: CircularProgressIndicator(),
-                              ),
-                              errorWidget: (context, url, error) =>
-                                  const Icon(Icons.error),
-                            ),
-                          ),
-                        if (item.data['title'] != null)
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(
-                              item.data['title'],
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        if (item.data['description'] != null && !isBigTile)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8.0,
-                            ),
-                            child: Text(
-                              item.data['description'],
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                );
-              }, childCount: _items.length),
-            ),
+            sliver: LensStaggeredGrid(items: _items, onUrlLaunch: _launchUrl),
           ),
           if (_isLoading)
             const SliverToBoxAdapter(
