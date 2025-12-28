@@ -5,7 +5,7 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:my_app/lens_screen/staggered_grid_algorithm.dart';
 import 'package:my_app/webview_screen.dart';
 
-class LensStaggeredGrid extends StatelessWidget {
+class LensStaggeredGrid extends StatefulWidget {
   final List<models.Row> items;
   final ScrollController scrollController;
   final bool isLoading;
@@ -19,6 +19,19 @@ class LensStaggeredGrid extends StatelessWidget {
     this.error,
   });
 
+  @override
+  State<LensStaggeredGrid> createState() => _LensStaggeredGridState();
+}
+
+class _LensStaggeredGridState extends State<LensStaggeredGrid> {
+  late List<QuiltedGridTile> _pattern;
+
+  @override
+  void initState() {
+    super.initState();
+    _pattern = StaggeredGridAlgorithm.generateRandomPattern();
+  }
+
   void _launchUrl(BuildContext context, String url) {
     Navigator.push(
       context,
@@ -28,12 +41,12 @@ class LensStaggeredGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (error != null) {
+    if (widget.error != null) {
       return SliverToBoxAdapter(
         child: Center(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Text('Error: $error'),
+            child: Text('Error: ${widget.error}'),
           ),
         ),
       );
@@ -46,11 +59,14 @@ class LensStaggeredGrid extends StatelessWidget {
           crossAxisCount: 3,
           mainAxisSpacing: 8,
           crossAxisSpacing: 8,
-          pattern: StaggeredGridAlgorithm.getPattern(),
+          pattern: _pattern,
         ),
         delegate: SliverChildBuilderDelegate((context, index) {
-          final item = items[index];
-          final isBigTile = StaggeredGridAlgorithm.isBigTile(index);
+          final item = widget.items[index];
+          // Dynamically check if the current tile in the pattern is 2x2
+          final patternIndex = index % _pattern.length;
+          final isBigTile = _pattern[patternIndex].mainAxisCount == 2;
+
           return GestureDetector(
             onTap: () {
               if (item.data['link'] != null) {
@@ -101,7 +117,7 @@ class LensStaggeredGrid extends StatelessWidget {
               ),
             ),
           );
-        }, childCount: items.length),
+        }, childCount: widget.items.length),
       ),
     );
   }
