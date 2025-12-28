@@ -9,6 +9,7 @@ import 'package:my_app/environment.dart';
 
 import 'package:my_app/model/post.dart';
 import 'package:my_app/model/profile.dart';
+import 'package:my_app/utils/handle_system.dart';
 
 class AppwriteService {
   final Client _client;
@@ -126,6 +127,8 @@ class AppwriteService {
     }
     final ownerId = user.$id;
 
+    final fingerprint = HandleSystem.generateFingerprint(handle);
+
     return await _db.createRow(
       databaseId: Environment.appwriteDatabaseId,
       tableId: profilesCollection,
@@ -136,6 +139,10 @@ class AppwriteService {
         'type': type,
         'bio': bio,
         'handle': handle,
+        'currentHandle': handle,
+        'reservedHandles': [handle],
+        'handleFingerprints': [fingerprint],
+        'lastHandleChangeAt': DateTime.now().toIso8601String(),
         'location': location,
         'profileImageUrl': profileImageUrl,
         'bannerImageUrl': bannerImageUrl,
@@ -147,6 +154,87 @@ class AppwriteService {
         Permission.update(Role.user(ownerId)),
         Permission.delete(Role.user(ownerId)),
       ],
+    );
+  }
+
+  Future<bool> isHandleAvailable(String handle) async {
+    final fingerprint = HandleSystem.generateFingerprint(handle);
+
+    try {
+      final result = await _db.listRows(
+        databaseId: Environment.appwriteDatabaseId,
+        tableId: profilesCollection,
+        queries: [
+          Query.equal('handleFingerprints', [fingerprint]),
+        ],
+      );
+      return result.total == 0;
+    } catch (e) {
+      log('Error checking handle availability: $e');
+      return false;
+    }
+  }
+
+  Future<models.Row> updateUserHandle({
+    required String profileId,
+    required String newHandle,
+  }) async {
+    final profile = await getProfile(profileId);
+    final lastChangeAt = profile.data['lastHandleChangeAt'];
+
+    // Check cooldown (7 days)
+    if (!HandleSystem.canChangeHandle(lastChangeAt)) {
+      final remaining = HandleSystem.remainingCooldown(lastChangeAt);
+      throw AppwriteException(
+        'Handle change is on cooldown. Try again in ${remaining.inDays} days.',
+        403,
+      );
+    }
+
+    // Check availability
+    if (!await isHandleAvailable(newHandle)) {
+      throw AppwriteException(
+        'Handle is visually similar to an existing or reserved handle.',
+        409,
+      );
+    }
+
+    final oldHandle = profile.data['currentHandle'] ?? profile.data['handle'];
+    final oldFingerprint = HandleSystem.generateFingerprint(oldHandle);
+
+    final newFingerprint = HandleSystem.generateFingerprint(newHandle);
+
+    final List<String> reservedHandles = List<String>.from(
+      profile.data['reservedHandles'] ?? [],
+    );
+    final List<String> handleFingerprints = List<String>.from(
+      profile.data['handleFingerprints'] ?? [],
+    );
+
+    if (!reservedHandles.contains(oldHandle)) {
+      reservedHandles.add(oldHandle);
+    }
+    if (!handleFingerprints.contains(oldFingerprint)) {
+      handleFingerprints.add(oldFingerprint);
+    }
+
+    // Add new ones
+    if (!reservedHandles.contains(newHandle)) {
+      reservedHandles.add(newHandle);
+    }
+    if (!handleFingerprints.contains(newFingerprint)) {
+      handleFingerprints.add(newFingerprint);
+    }
+
+    return await updateProfile(
+      profileId: profileId,
+      data: {
+        'handle': newHandle,
+        'currentHandle': newHandle,
+        'reservedHandles': reservedHandles,
+        'handleFingerprints': handleFingerprints,
+        'lastHandleChangeAt': DateTime.now().toIso8601String(),
+      },
     );
   }
 

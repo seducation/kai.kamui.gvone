@@ -13,6 +13,7 @@ import 'hmv_music_tabscreen.dart';
 import 'hmv_photos_tabscreen.dart';
 import 'chats_screen.dart';
 import 'tab_manager_screen.dart';
+import 'appwrite_client.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -267,6 +268,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           title: SizedBox(height: kToolbarHeight, child: tabBarWidget),
           titleSpacing: 0,
           actions: [
+            TextButton(
+              onPressed: () => client.ping(),
+              child: const Text(
+                'Send a ping',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
             IconButton(
               icon: const Icon(Icons.search),
               onPressed: () => context.push('/search'),
@@ -308,6 +316,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 title: Text(currentTitle),
                 centerTitle: true,
                 actions: [
+                  TextButton(
+                    onPressed: () => client.ping(),
+                    child: const Text('Send a ping'),
+                  ),
                   IconButton(
                     icon: const Icon(Icons.search),
                     onPressed: () => context.push('/search'),

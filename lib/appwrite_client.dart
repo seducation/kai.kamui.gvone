@@ -1,10 +1,11 @@
 import 'package:appwrite/appwrite.dart';
-import 'package:my_app/environment.dart';
+
+final Client client = Client()
+    .setProject("gvone")
+    .setEndpoint("https://fra.cloud.appwrite.io/v1");
 
 class AppwriteClient {
-  Client get client => Client()
-    ..setEndpoint(Environment.appwritePublicEndpoint)
-    ..setProject(Environment.appwriteProjectId);
+  Client get clientInstance => client;
 
   Account get account => Account(client);
   Databases get databases => Databases(client);

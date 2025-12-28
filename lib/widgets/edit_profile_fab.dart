@@ -53,8 +53,10 @@ class _ChannelSettingsDialogState extends State<ChannelSettingsDialog> {
 
   Future<void> _loadProfile() async {
     try {
-      final appwriteService =
-          Provider.of<AppwriteService>(context, listen: false);
+      final appwriteService = Provider.of<AppwriteService>(
+        context,
+        listen: false,
+      );
       final profile = await appwriteService.getProfile(widget.profileId);
       setState(() {
         _nameController.text = profile.data['name'] ?? '';
@@ -75,9 +77,9 @@ class _ChannelSettingsDialogState extends State<ChannelSettingsDialog> {
       });
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to load profile: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to load profile: $e')));
     }
   }
 
@@ -98,14 +100,13 @@ class _ChannelSettingsDialogState extends State<ChannelSettingsDialog> {
       sourcePath: pickedFile.path,
       uiSettings: [
         AndroidUiSettings(
-            toolbarTitle: 'Cropper',
-            toolbarColor: Colors.deepOrange,
-            toolbarWidgetColor: Colors.white,
-            initAspectRatio: CropAspectRatioPreset.original,
-            lockAspectRatio: false),
-        IOSUiSettings(
-          title: 'Cropper',
+          toolbarTitle: 'Cropper',
+          toolbarColor: Colors.deepOrange,
+          toolbarWidgetColor: Colors.white,
+          initAspectRatio: CropAspectRatioPreset.original,
+          lockAspectRatio: false,
         ),
+        IOSUiSettings(title: 'Cropper'),
       ],
     );
 
@@ -115,16 +116,37 @@ class _ChannelSettingsDialogState extends State<ChannelSettingsDialog> {
   Future<void> _saveSettings() async {
     if (_formKey.currentState!.validate()) {
       try {
-        final appwriteService =
-            Provider.of<AppwriteService>(context, listen: false);
+        final appwriteService = Provider.of<AppwriteService>(
+          context,
+          listen: false,
+        );
 
         final Map<String, dynamic> dataToUpdate = {
           'name': _nameController.text,
           'bio': _bioController.text,
-          'handle': _handleController.text,
           'location': _locationController.text,
           'privacy': _privacy,
         };
+
+        // Check if handle changed
+        final profile = await appwriteService.getProfile(widget.profileId);
+        final currentHandle = profile.data['handle'] ?? '';
+        final newHandle = _handleController.text;
+
+        if (newHandle != currentHandle) {
+          try {
+            await appwriteService.updateUserHandle(
+              profileId: widget.profileId,
+              newHandle: newHandle,
+            );
+          } catch (e) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('Handle error: $e')));
+            return; // Stop if handle update fails
+          }
+        }
 
         if (_profileImage != null) {
           final file = await appwriteService.uploadFile(
@@ -149,15 +171,15 @@ class _ChannelSettingsDialogState extends State<ChannelSettingsDialog> {
 
         if (!mounted) return;
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Profile Updated!")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Profile Updated!")));
         Navigator.of(context).pop();
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update profile: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to update profile: $e')));
       }
     }
   }
@@ -184,7 +206,9 @@ class _ChannelSettingsDialogState extends State<ChannelSettingsDialog> {
                       ChannelHeader(
                         handleController: _handleController,
                         onBannerTap: () async {
-                          final image = await _pickAndCropImage(ImageSource.gallery);
+                          final image = await _pickAndCropImage(
+                            ImageSource.gallery,
+                          );
                           if (image != null) {
                             setState(() {
                               _bannerImage = image;
@@ -192,7 +216,9 @@ class _ChannelSettingsDialogState extends State<ChannelSettingsDialog> {
                           }
                         },
                         onProfileTap: () async {
-                          final image = await _pickAndCropImage(ImageSource.gallery);
+                          final image = await _pickAndCropImage(
+                            ImageSource.gallery,
+                          );
                           if (image != null) {
                             setState(() {
                               _profileImage = image;
@@ -236,7 +262,7 @@ class _ChannelSettingsDialogState extends State<ChannelSettingsDialog> {
                         items: const [
                           'Public',
                           'Private',
-                          'Private for some people'
+                          'Private for some people',
                         ],
                         onChanged: (value) {
                           setState(() {
@@ -265,10 +291,7 @@ class _ChannelSettingsDialogState extends State<ChannelSettingsDialog> {
         children: [
           const Text(
             'Channel settings',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 20,
-            ),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
           ),
           IconButton(
             icon: const Icon(Icons.close),
@@ -335,14 +358,23 @@ class ChannelHeader extends StatelessWidget {
       bannerWidget = CachedNetworkImage(
         imageUrl: bannerImageUrl!,
         fit: BoxFit.cover,
-        placeholder: (context, url) => Container(color: theme.colorScheme.secondaryContainer),
-        errorWidget: (context, url, error) =>
-            Center(child: Icon(Icons.image, color: theme.colorScheme.onSecondaryContainer)),
+        placeholder: (context, url) =>
+            Container(color: theme.colorScheme.secondaryContainer),
+        errorWidget: (context, url, error) => Center(
+          child: Icon(
+            Icons.image,
+            color: theme.colorScheme.onSecondaryContainer,
+          ),
+        ),
       );
     } else {
       bannerWidget = Center(
-          child: Icon(Icons.image,
-              color: theme.colorScheme.onSecondaryContainer, size: 50));
+        child: Icon(
+          Icons.image,
+          color: theme.colorScheme.onSecondaryContainer,
+          size: 50,
+        ),
+      );
     }
 
     return Column(
@@ -389,18 +421,28 @@ class ChannelHeader extends StatelessWidget {
                       child: ClipOval(
                         child: SizedBox.fromSize(
                           size: const Size.fromRadius(40),
-                          child: (
-                            profileImage != null 
-                            ? Image.file(profileImage!, fit: BoxFit.cover)
-                            : (profileImageUrl != null && profileImageUrl!.isNotEmpty)
+                          child: (profileImage != null
+                              ? Image.file(profileImage!, fit: BoxFit.cover)
+                              : (profileImageUrl != null &&
+                                    profileImageUrl!.isNotEmpty)
                               ? CachedNetworkImage(
                                   imageUrl: profileImageUrl!,
                                   fit: BoxFit.cover,
-                                  placeholder: (context, url) => Center(child: CircularProgressIndicator()),
-                                  errorWidget: (context, url, error) => Icon(Icons.person, size: 50, color: theme.colorScheme.onSecondaryContainer),
+                                  placeholder: (context, url) => Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                  errorWidget: (context, url, error) => Icon(
+                                    Icons.person,
+                                    size: 50,
+                                    color:
+                                        theme.colorScheme.onSecondaryContainer,
+                                  ),
                                 )
-                              : Icon(Icons.person, size: 50, color: theme.colorScheme.onSecondaryContainer)
-                          ),
+                              : Icon(
+                                  Icons.person,
+                                  size: 50,
+                                  color: theme.colorScheme.onSecondaryContainer,
+                                )),
                         ),
                       ),
                     ),
@@ -480,8 +522,9 @@ class _CustomTextFieldState extends State<CustomTextField> {
             RichText(
               text: TextSpan(
                 text: widget.label,
-                style: theme.textTheme.bodyLarge
-                    ?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -502,9 +545,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
                 controller: widget.controller,
                 maxLines: widget.isSingleLine ? 1 : widget.minLines,
                 maxLength: widget.maxLength,
-                style: TextStyle(
-                  fontSize: 14,
-                ),
+                style: TextStyle(fontSize: 14),
                 decoration: InputDecoration(
                   hintText: widget.hintText,
                   hintStyle: theme.inputDecorationTheme.hintStyle,
@@ -577,8 +618,9 @@ class CustomDropdown extends StatelessWidget {
             RichText(
               text: TextSpan(
                 text: label,
-                style: theme.textTheme.bodyLarge
-                    ?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -594,15 +636,10 @@ class CustomDropdown extends StatelessWidget {
           child: DropdownButtonFormField<String>(
             initialValue: value,
             items: items.map((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value),
-              );
+              return DropdownMenuItem<String>(value: value, child: Text(value));
             }).toList(),
             onChanged: onChanged,
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-            ),
+            decoration: const InputDecoration(border: InputBorder.none),
           ),
         ),
       ],

@@ -97,6 +97,20 @@ class _CreateRowDialogState extends State<CreateRowDialog> {
           }
         }
 
+        // Check handle availability
+        final handle = _handleController.text;
+        if (!await appwriteService.isHandleAvailable(handle)) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Handle is visually similar to an existing or reserved handle.',
+              ),
+            ),
+          );
+          return;
+        }
+
         String? profileImageId;
         if (_profileImage != null) {
           final file = await appwriteService.uploadFile(
