@@ -40,13 +40,15 @@ class _CNMChatsTabscreenState extends State<CNMChatsTabscreen> {
       }
       final senderProfiles = await appwrite.getUserProfiles(ownerId: user.$id);
       if (!mounted) return;
-      final userProfiles = senderProfiles.rows.where((p) => p.data['type'] == 'profile');
+      final userProfiles = senderProfiles.rows.where(
+        (p) => p.data['type'] == 'profile',
+      );
 
       if (userProfiles.isEmpty) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Go and create a profile first'),
-          ));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Go and create a profile first')),
+          );
         }
         setState(() {
           _isLoading = false;
@@ -67,13 +69,16 @@ class _CNMChatsTabscreenState extends State<CNMChatsTabscreen> {
       for (final message in messages.rows) {
         final chatId = message.data['chatId'] as String;
         final ids = chatId.split('_');
-        final otherUserId = ids.firstWhere((id) => id != user.$id, orElse: () => '');
+        final otherUserId = ids.firstWhere(
+          (id) => id != user.$id,
+          orElse: () => '',
+        );
 
         if (otherUserId.isEmpty) continue;
 
         final otherUserProfiles = profilesByOwner[otherUserId];
         if (otherUserProfiles == null || otherUserProfiles.isEmpty) {
-          continue; 
+          continue;
         }
 
         final mainProfile = otherUserProfiles.firstWhere(
@@ -94,7 +99,8 @@ class _CNMChatsTabscreenState extends State<CNMChatsTabscreen> {
             messageCount: 0,
           );
         } else {
-          conversations[conversationId]!.message = message.data['message'] as String;
+          conversations[conversationId]!.message =
+              message.data['message'] as String;
           conversations[conversationId]!.time = message.$createdAt;
         }
       }
@@ -115,11 +121,10 @@ class _CNMChatsTabscreenState extends State<CNMChatsTabscreen> {
     }
   }
 
-    String _getChatId(String userId1, String userId2) {
+  String _getChatId(String userId1, String userId2) {
     final ids = [userId1, userId2]..sort();
     return ids.join('_');
   }
-
 
   void _viewStory(int index) async {
     final chat = _chatItems[index];
@@ -144,9 +149,7 @@ class _CNMChatsTabscreenState extends State<CNMChatsTabscreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => OneTimeMessageScreen(
-            message: otmMessage,
-          ),
+          builder: (context) => OneTimeMessageScreen(message: otmMessage),
         ),
       ).then((_) => _getConversations());
     }
@@ -161,29 +164,28 @@ class _CNMChatsTabscreenState extends State<CNMChatsTabscreen> {
               slivers: [
                 SliverToBoxAdapter(
                   child: StatusBar(
-                      chatItems: _chatItems,
-                      onViewStory: (index) => _viewStory(index)),
+                    chatItems: _chatItems,
+                    onViewStory: (index) => _viewStory(index),
+                  ),
                 ),
                 SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final chat = _chatItems[index];
-                      return ChatListItem(
-                          chat: chat,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ChatMessagingScreen(
-                                  chat: chat,
-                                  onMessageSent: (message) {},
-                                ),
-                              ),
-                            );
-                          });
-                    },
-                    childCount: _chatItems.length,
-                  ),
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final chat = _chatItems[index];
+                    return ChatListItem(
+                      chat: chat,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ChatMessagingScreen(
+                              chat: chat,
+                              onMessageSent: (message) {},
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  }, childCount: _chatItems.length),
                 ),
               ],
             ),
@@ -206,7 +208,11 @@ class StatusBar extends StatelessWidget {
   final List<ChatModel> chatItems;
   final Function(int) onViewStory;
 
-  const StatusBar({super.key, required this.chatItems, required this.onViewStory});
+  const StatusBar({
+    super.key,
+    required this.chatItems,
+    required this.onViewStory,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -228,7 +234,9 @@ class StatusBar extends StatelessWidget {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: chat.hasStory ? Colors.pinkAccent : Colors.transparent,
+                        color: chat.hasStory
+                            ? Colors.pinkAccent
+                            : Colors.transparent,
                         width: 3,
                       ),
                     ),
@@ -280,14 +288,22 @@ class ChatListItem extends StatelessWidget {
               : null,
         ),
       ),
-      title: Text(chat.name,
-          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+      title: Text(
+        chat.name,
+        style: const TextStyle(
+          color: Colors.black,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
       subtitle: Text(chat.message, style: const TextStyle(color: Colors.grey)),
       trailing: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(chat.time, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+          Text(
+            chat.time,
+            style: const TextStyle(color: Colors.grey, fontSize: 12),
+          ),
           const SizedBox(height: 5),
           if (chat.messageCount != null && chat.messageCount! > .0)
             Container(
@@ -315,9 +331,15 @@ class ShimmerChatListItem extends StatelessWidget {
     return const ListTile(
       leading: CircleAvatar(radius: 30, backgroundColor: Colors.white),
       title: SizedBox(
-          height: 20, width: 150, child: ColoredBox(color: Colors.white)),
+        height: 20,
+        width: 150,
+        child: ColoredBox(color: Colors.white),
+      ),
       subtitle: SizedBox(
-          height: 15, width: 100, child: ColoredBox(color: Colors.white)),
+        height: 15,
+        width: 100,
+        child: ColoredBox(color: Colors.white),
+      ),
     );
   }
 }
