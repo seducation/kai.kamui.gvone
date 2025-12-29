@@ -135,12 +135,37 @@ class AppwriteService {
     final ownerId = user.$id;
 
     final fingerprint = HandleSystem.generateFingerprint(handle);
+    final lockId = 'h_$fingerprint';
+
+    // Create the lock document first to ensure uniqueness
+    try {
+      await _db.createRow(
+        databaseId: Environment.appwriteDatabaseId,
+        tableId: profilesCollection,
+        rowId: lockId,
+        data: {'docType': 'handle_lock', 'ownerId': ownerId, 'handle': handle},
+        permissions: [
+          Permission.read(Role.any()),
+          Permission.update(Role.user(ownerId)),
+          Permission.delete(Role.user(ownerId)),
+        ],
+      );
+    } catch (e) {
+      if (e is AppwriteException && e.code == 409) {
+        throw AppwriteException(
+          'Handle is already taken or visually similar to an existing one.',
+          409,
+        );
+      }
+      rethrow;
+    }
 
     return await _db.createRow(
       databaseId: Environment.appwriteDatabaseId,
       tableId: profilesCollection,
       rowId: ID.unique(),
       data: {
+        'docType': 'profile',
         'ownerId': ownerId,
         'name': name,
         'type': type,
@@ -148,7 +173,6 @@ class AppwriteService {
         'handle': handle,
         'currentHandle': handle,
         'reservedHandles': [handle],
-        'handleFingerprints': [fingerprint],
         'lastHandleChangeAt': DateTime.now().toIso8601String(),
         'location': location,
         'profileImageUrl': profileImageUrl,
@@ -166,17 +190,21 @@ class AppwriteService {
 
   Future<bool> isHandleAvailable(String handle) async {
     final fingerprint = HandleSystem.generateFingerprint(handle);
+    final lockId = 'h_$fingerprint';
 
     try {
-      final result = await _db.listRows(
+      await _db.getRow(
         databaseId: Environment.appwriteDatabaseId,
         tableId: profilesCollection,
-        queries: [
-          Query.equal('handleFingerprints', [fingerprint]),
-        ],
+        rowId: lockId,
       );
-      return result.total == 0;
+      // If document found, handle is taken
+      return false;
     } catch (e) {
+      if (e is AppwriteException && e.code == 404) {
+        // Document not found, handle is available
+        return true;
+      }
       log('Error checking handle availability: $e');
       return false;
     }
@@ -188,49 +216,52 @@ class AppwriteService {
   }) async {
     final profile = await getProfile(profileId);
     final lastChangeAt = profile.data['lastHandleChangeAt'];
+    final ownerId = profile.data['ownerId'];
 
     // Check cooldown (7 days)
     if (!HandleSystem.canChangeHandle(lastChangeAt)) {
       final remaining = HandleSystem.remainingCooldown(lastChangeAt);
       throw AppwriteException(
-        'Handle change is on cooldown. Try again in ${remaining.inDays} days.',
+        'Handle change is on cooldown. Try again in ${remaining.inHours} hours.',
         403,
       );
     }
 
-    // Check availability
-    if (!await isHandleAvailable(newHandle)) {
-      throw AppwriteException(
-        'Handle is visually similar to an existing or reserved handle.',
-        409,
+    final fingerprint = HandleSystem.generateFingerprint(newHandle);
+    final lockId = 'h_$fingerprint';
+
+    // Try to create the new lock document
+    try {
+      await _db.createRow(
+        databaseId: Environment.appwriteDatabaseId,
+        tableId: profilesCollection,
+        rowId: lockId,
+        data: {
+          'docType': 'handle_lock',
+          'ownerId': ownerId,
+          'handle': newHandle,
+        },
+        permissions: [
+          Permission.read(Role.any()),
+          Permission.update(Role.user(ownerId)),
+          Permission.delete(Role.user(ownerId)),
+        ],
       );
+    } catch (e) {
+      if (e is AppwriteException && e.code == 409) {
+        throw AppwriteException(
+          'Handle is already taken or visually similar to an existing one.',
+          409,
+        );
+      }
+      rethrow;
     }
-
-    final oldHandle = profile.data['currentHandle'] ?? profile.data['handle'];
-    final oldFingerprint = HandleSystem.generateFingerprint(oldHandle);
-
-    final newFingerprint = HandleSystem.generateFingerprint(newHandle);
 
     final List<String> reservedHandles = List<String>.from(
       profile.data['reservedHandles'] ?? [],
     );
-    final List<String> handleFingerprints = List<String>.from(
-      profile.data['handleFingerprints'] ?? [],
-    );
-
-    if (!reservedHandles.contains(oldHandle)) {
-      reservedHandles.add(oldHandle);
-    }
-    if (!handleFingerprints.contains(oldFingerprint)) {
-      handleFingerprints.add(oldFingerprint);
-    }
-
-    // Add new ones
     if (!reservedHandles.contains(newHandle)) {
       reservedHandles.add(newHandle);
-    }
-    if (!handleFingerprints.contains(newFingerprint)) {
-      handleFingerprints.add(newFingerprint);
     }
 
     return await updateProfile(
@@ -239,7 +270,6 @@ class AppwriteService {
         'handle': newHandle,
         'currentHandle': newHandle,
         'reservedHandles': reservedHandles,
-        'handleFingerprints': handleFingerprints,
         'lastHandleChangeAt': DateTime.now().toIso8601String(),
       },
     );
