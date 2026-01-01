@@ -21,12 +21,13 @@ class SearchService {
       double score = 0.0;
       final name = (data['name'] ?? '').toString().toLowerCase();
       final q = query.toLowerCase();
-      if (name == q)
+      if (name == q) {
         score = 2.0;
-      else if (name.startsWith(q))
+      } else if (name.startsWith(q)) {
         score = 1.5;
-      else if (name.contains(q))
+      } else if (name.contains(q)) {
         score = 1.0;
+      }
 
       return {'type': 'profile', 'data': data, 'score': score};
     }).toList();
@@ -55,9 +56,8 @@ class SearchService {
           shares: data['shares'] ?? 0,
           views: data['views'] ?? 0,
         ),
-        tags: (data['tags'] as List<dynamic>?)
-            ?.map((e) => e.toString())
-            .toList(),
+        tags:
+            (data['tags'] as List<dynamic>?)?.map((e) => e.toString()).toList(),
       );
 
       final score = SearchAlgorithm.calculateScore(post, query);
