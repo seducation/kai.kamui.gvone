@@ -104,8 +104,8 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
 
       _fullProfileImageUrl =
           (profileImageId != null && profileImageId.isNotEmpty)
-          ? _appwriteService.getFileViewUrl(profileImageId)
-          : null;
+              ? _appwriteService.getFileViewUrl(profileImageId)
+              : null;
 
       _fullBannerImageUrl = (bannerImageId != null && bannerImageId.isNotEmpty)
           ? _appwriteService.getFileViewUrl(bannerImageId)
@@ -229,18 +229,19 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isCurrentUser =
-        _authService.activeIdentityId != null &&
-        _authService.activeIdentityId == widget.profileId;
+    // Check if the viewed profile belongs to the current user (by ownerId)
+    final isCurrentUser = _profile != null &&
+        _authService.currentUser != null &&
+        _profile!.ownerId == _authService.currentUser!.id;
     return Scaffold(
       backgroundColor: Colors.white,
       body: _isLoading || _tabController == null
           ? const Center(child: CircularProgressIndicator())
           : _profile == null
-          ? const Center(child: Text("Profile not found"))
-          : NestedScrollView(
-              headerSliverBuilder:
-                  (BuildContext context, bool innerBoxIsScrolled) {
+              ? const Center(child: Text("Profile not found"))
+              : NestedScrollView(
+                  headerSliverBuilder:
+                      (BuildContext context, bool innerBoxIsScrolled) {
                     return <Widget>[
                       SliverAppBar(
                         expandedHeight: 180.0,
@@ -272,18 +273,17 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
                           ),
                         ],
                         flexibleSpace: FlexibleSpaceBar(
-                          background:
-                              _fullBannerImageUrl != null &&
+                          background: _fullBannerImageUrl != null &&
                                   _fullBannerImageUrl!.isNotEmpty
                               ? CachedNetworkImage(
                                   imageUrl: _fullBannerImageUrl!,
                                   fit: BoxFit.cover,
                                   placeholder: (context, url) =>
                                       Shimmer.fromColors(
-                                        baseColor: Colors.grey[300]!,
-                                        highlightColor: Colors.grey[100]!,
-                                        child: Container(color: Colors.white),
-                                      ),
+                                    baseColor: Colors.grey[300]!,
+                                    highlightColor: Colors.grey[100]!,
+                                    child: Container(color: Colors.white),
+                                  ),
                                   errorWidget: (context, url, error) =>
                                       Container(color: Colors.grey[200]),
                                 )
@@ -303,13 +303,12 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
                                     backgroundColor: Colors.grey[300],
                                     backgroundImage:
                                         _fullProfileImageUrl != null &&
-                                            _fullProfileImageUrl!.isNotEmpty
-                                        ? CachedNetworkImageProvider(
-                                            _fullProfileImageUrl!,
-                                          )
-                                        : null,
-                                    child:
-                                        _fullProfileImageUrl == null ||
+                                                _fullProfileImageUrl!.isNotEmpty
+                                            ? CachedNetworkImageProvider(
+                                                _fullProfileImageUrl!,
+                                              )
+                                            : null,
+                                    child: _fullProfileImageUrl == null ||
                                             _fullProfileImageUrl!.isEmpty
                                         ? Icon(
                                             Icons.person,
@@ -450,8 +449,9 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
                       ),
                     ];
                   },
-              body: TabBarView(controller: _tabController, children: _tabViews),
-            ),
+                  body: TabBarView(
+                      controller: _tabController, children: _tabViews),
+                ),
       floatingActionButton: isCurrentUser
           ? FloatingActionButton(
               onPressed: () {
