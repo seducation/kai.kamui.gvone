@@ -1,5 +1,5 @@
 {
-    "name": "report-post",
+    "name": "generate_report",
     "version": "1.0.0",
     "description": "",
     "main": "main.js",

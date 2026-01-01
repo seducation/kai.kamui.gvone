@@ -530,9 +530,8 @@ class AppwriteService {
 
       if (follows.total == 0) return models.RowList(total: 0, rows: []);
 
-      final followingIds = follows.rows
-          .map((row) => row.data['target_id'] as String)
-          .toList();
+      final followingIds =
+          follows.rows.map((row) => row.data['target_id'] as String).toList();
 
       return await _db.listRows(
         databaseId: Environment.appwriteDatabaseId,
@@ -827,13 +826,17 @@ class AppwriteService {
     required String reason,
   }) async {
     try {
+      final body = jsonEncode({
+        'postId': postId,
+        'reporterId': reporterId,
+        'reason': reason,
+      });
+
+      log('Reporting Post - Payload: $body');
+
       final result = await _functions.createExecution(
-        functionId: 'report-post',
-        body: jsonEncode({
-          'postId': postId,
-          'reporterId': reporterId,
-          'reason': reason,
-        }),
+        functionId: 'generate_report',
+        body: body,
       );
 
       final response = jsonDecode(result.responseBody);
@@ -879,9 +882,8 @@ class AppwriteService {
     final profileIdData = postRow.data['profile_id'];
     String? profileId;
     if (profileIdData is List) {
-      profileId = profileIdData.isNotEmpty
-          ? profileIdData.first.toString()
-          : null;
+      profileId =
+          profileIdData.isNotEmpty ? profileIdData.first.toString() : null;
     } else {
       profileId = profileIdData?.toString();
     }
@@ -901,9 +903,8 @@ class AppwriteService {
     } else {
       final fileIdsData = postRow.data['file_ids'];
       if (fileIdsData is List) {
-        mediaUrls = fileIdsData
-            .map((id) => getFileViewUrl(id.toString()))
-            .toList();
+        mediaUrls =
+            fileIdsData.map((id) => getFileViewUrl(id.toString())).toList();
       }
     }
 
@@ -1297,9 +1298,8 @@ class AppwriteService {
         'profileId': profileId,
         'mediaUrl': mediaUrl,
         'mediaType': mediaType,
-        'expiresAt': DateTime.now()
-            .add(const Duration(hours: 24))
-            .toIso8601String(),
+        'expiresAt':
+            DateTime.now().add(const Duration(hours: 24)).toIso8601String(),
         if (caption != null) 'caption': caption,
         if (location != null) 'location': location,
       },
