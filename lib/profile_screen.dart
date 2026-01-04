@@ -53,6 +53,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.workspace_premium),
+            tooltip: 'Upgrade Plan',
+            onPressed: () {
+              context.push('/upgrade');
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
               context.push('/settings');

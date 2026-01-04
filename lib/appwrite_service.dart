@@ -35,6 +35,8 @@ class AppwriteService {
   static const String savedPostsCollection = "saved_posts";
   static const String likesCollection = "likes";
   static const String followsCollection = "follows";
+  static const String tvProfilesCollection = "tv_profiles";
+  static const String tvPostsCollection = "tv_posts";
 
   AppwriteService(this._client) {
     _db = TablesDB(_client);
@@ -125,8 +127,8 @@ class AppwriteService {
     required String bio,
     required String handle,
     required String location,
-    required String profileImageUrl,
-    required String bannerImageUrl,
+    String? profileImageUrl,
+    String? bannerImageUrl,
   }) async {
     final user = await getUser();
     if (user == null) {
@@ -152,6 +154,7 @@ class AppwriteService {
         'ownerId': ownerId,
         'name': name,
         'type': type,
+        'docType': type,
         'bio': bio,
         'handle': handle,
         'currentHandle': handle,
@@ -161,6 +164,57 @@ class AppwriteService {
         'location': location,
         'profileImageUrl': profileImageUrl,
         'bannerImageUrl': bannerImageUrl,
+      },
+      permissions: [
+        Permission.read(Role.any()),
+        Permission.update(Role.user(ownerId)),
+        Permission.delete(Role.user(ownerId)),
+      ],
+    );
+  }
+
+  Future<models.Row> createTVProfile({
+    required String name,
+    required String bio,
+    required String handle,
+    required String rssUrl,
+    required String category,
+    String? profileImageUrl,
+    String? bannerImageUrl,
+  }) async {
+    final user = await getUser();
+    if (user == null) {
+      throw AppwriteException('User not authenticated', 401);
+    }
+    final ownerId = user.$id;
+
+    // Check handle availability (using same system)
+    if (!await isHandleAvailable(handle)) {
+      throw AppwriteException(
+        'Handle is already taken or visually similar to an existing one.',
+        409,
+      );
+    }
+
+    final fingerprint = HandleSystem.generateFingerprint(handle);
+
+    return await _db.createRow(
+      databaseId: Environment.appwriteDatabaseId,
+      tableId: tvProfilesCollection,
+      rowId: ID.unique(),
+      data: {
+        'ownerId': ownerId,
+        'name': name,
+        'type': 'tv',
+        'bio': bio,
+        'handle': handle,
+        'category': category,
+        'rss_url': rssUrl,
+        'handleFingerprints': [fingerprint],
+        'profileImageUrl': profileImageUrl,
+        'bannerImageUrl': bannerImageUrl,
+        'is_verified': false,
+        'followers_count': 0,
       },
       permissions: [
         Permission.read(Role.any()),
@@ -238,6 +292,19 @@ class AppwriteService {
     );
   }
 
+  Future<models.RowList> getTVProfiles({String? category}) async {
+    List<String> queries = [Query.equal('type', 'tv')];
+    if (category != null && category != 'All') {
+      queries.add(Query.equal('category', category));
+    }
+
+    return await _db.listRows(
+      databaseId: Environment.appwriteDatabaseId,
+      tableId: tvProfilesCollection,
+      queries: queries,
+    );
+  }
+
   Future<models.Row> updateProfile({
     required String profileId,
     required Map<String, dynamic> data,
@@ -278,17 +345,56 @@ class AppwriteService {
   }
 
   Future<models.RowList> getUserProfiles({required String ownerId}) async {
-    return await _db.listRows(
-      databaseId: Environment.appwriteDatabaseId,
-      tableId: profilesCollection,
-      queries: [Query.equal('ownerId', ownerId)],
-    );
+    try {
+      final results = await Future.wait([
+        _db.listRows(
+          databaseId: Environment.appwriteDatabaseId,
+          tableId: profilesCollection,
+          queries: [Query.equal('ownerId', ownerId)],
+        ),
+        _db.listRows(
+          databaseId: Environment.appwriteDatabaseId,
+          tableId: tvProfilesCollection,
+          queries: [Query.equal('ownerId', ownerId)],
+        ),
+      ]);
+
+      final allRows = [...results[0].rows, ...results[1].rows];
+      return models.RowList(
+        total: results[0].total + results[1].total,
+        rows: allRows,
+      );
+    } catch (e) {
+      log('Error getting user profiles: $e');
+      rethrow;
+    }
   }
 
   Future<models.Row> getProfile(String profileId) async {
+    try {
+      return await _db.getRow(
+        databaseId: Environment.appwriteDatabaseId,
+        tableId: profilesCollection,
+        rowId: profileId,
+      );
+    } catch (e) {
+      // If not found in profiles, try TV profiles
+      try {
+        return await _db.getRow(
+          databaseId: Environment.appwriteDatabaseId,
+          tableId: tvProfilesCollection,
+          rowId: profileId,
+        );
+      } catch (_) {
+        throw e; // Throw original error if neither found
+      }
+    }
+  }
+
+  Future<models.Row> getTVProfile(String profileId) async {
     return await _db.getRow(
       databaseId: Environment.appwriteDatabaseId,
-      tableId: profilesCollection,
+      tableId: tvProfilesCollection,
       rowId: profileId,
     );
   }
@@ -713,6 +819,19 @@ class AppwriteService {
       databaseId: Environment.appwriteDatabaseId,
       tableId: postsCollection,
       queries: [Query.equal('profile_id', profileIds)],
+    );
+  }
+
+  Future<models.RowList> getTVPosts(String tvProfileId,
+      {int limit = 20}) async {
+    return _db.listRows(
+      databaseId: Environment.appwriteDatabaseId,
+      tableId: tvPostsCollection,
+      queries: [
+        Query.equal('tv_profile_id', tvProfileId),
+        Query.orderDesc('published_at'),
+        Query.limit(limit),
+      ],
     );
   }
 

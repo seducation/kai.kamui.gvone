@@ -594,10 +594,10 @@ class _PostItemState extends State<PostItem> {
                     opaque: false,
                     pageBuilder: (context, animation, secondaryAnimation) =>
                         FullScreenPostDetailPage(
-                          post: widget.post,
-                          initialIndex: _currentVideoIndex,
-                          profileId: widget.profileId,
-                        ),
+                      post: widget.post,
+                      initialIndex: _currentVideoIndex,
+                      profileId: widget.profileId,
+                    ),
                   ),
                 );
               },
@@ -802,8 +802,8 @@ class _PostItemState extends State<PostItem> {
             else
               Builder(
                 builder: (context) {
-                  final bool isValidUrl =
-                      widget.post.author.profileImageUrl != null &&
+                  final bool isValidUrl = widget.post.author.profileImageUrl !=
+                          null &&
                       (widget.post.author.profileImageUrl!.startsWith('http') ||
                           widget.post.author.profileImageUrl!.startsWith(
                             'https',
@@ -839,6 +839,27 @@ class _PostItemState extends State<PostItem> {
                           color: Colors.black87,
                         ),
                       ),
+                      if (widget.post.author.type == 'tv') ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.blue,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            'TV',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
                       if (widget.post.originalAuthor != null)
                         Flexible(
                           child: Row(
@@ -921,10 +942,10 @@ class _PostItemState extends State<PostItem> {
                         opaque: false,
                         pageBuilder: (context, animation, secondaryAnimation) =>
                             FullScreenPostDetailPage(
-                              post: widget.post,
-                              initialIndex: index,
-                              profileId: widget.profileId,
-                            ),
+                          post: widget.post,
+                          initialIndex: index,
+                          profileId: widget.profileId,
+                        ),
                       ),
                     );
                   },
@@ -973,8 +994,7 @@ class _PostItemState extends State<PostItem> {
         ],
       );
     } else {
-      final bool isValidUrl =
-          widget.post.mediaUrls!.first.startsWith('http') ||
+      final bool isValidUrl = widget.post.mediaUrls!.first.startsWith('http') ||
           widget.post.mediaUrls!.first.startsWith('https');
       return GestureDetector(
         onDoubleTap: () {
@@ -986,10 +1006,10 @@ class _PostItemState extends State<PostItem> {
               opaque: false,
               pageBuilder: (context, animation, secondaryAnimation) =>
                   FullScreenPostDetailPage(
-                    post: widget.post,
-                    initialIndex: 0,
-                    profileId: widget.profileId,
-                  ),
+                post: widget.post,
+                initialIndex: 0,
+                profileId: widget.profileId,
+              ),
             ),
           );
         },
@@ -1116,8 +1136,7 @@ class _PostItemState extends State<PostItem> {
                 ...List.generate(videoCount - 1, (index) {
                   final progressPercent = (index + 1) / videoCount;
                   return Positioned(
-                    left:
-                        12 +
+                    left: 12 +
                         (totalTrackWidth * progressPercent) -
                         1, // -1 to center 2px divider
                     child: Container(
@@ -1157,14 +1176,13 @@ class _PostItemState extends State<PostItem> {
     }
 
     // Calculate total duration (approximation for unloaded videos)
-    int total =
-        _controller!.value.duration.inMilliseconds *
+    int total = _controller!.value.duration.inMilliseconds *
         widget.post.mediaUrls!.length;
 
     // Calculate cumulative position
     int position =
         (_currentVideoIndex * _controller!.value.duration.inMilliseconds) +
-        _controller!.value.position.inMilliseconds;
+            _controller!.value.position.inMilliseconds;
 
     return {'position': position, 'total': total};
   }

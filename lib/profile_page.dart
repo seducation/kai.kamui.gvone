@@ -12,6 +12,7 @@ import 'package:my_app/tabs/posts_tab.dart';
 import 'package:my_app/tabs/products_tab.dart';
 import 'package:my_app/tabs/servicesprofile_tab.dart';
 import 'package:my_app/tabs/videos_tab.dart';
+import 'package:my_app/tabs/tv_posts_tab.dart'; // Add this import
 import 'package:my_app/widgets/edit_profile_fab.dart';
 import 'package:my_app/widgets/more_options_modal.dart';
 import 'package:provider/provider.dart';
@@ -150,6 +151,12 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
   }
 
   List<String> _getTabsForProfile(Profile? profile) {
+    // TV Profiles: Home, TV Posts, About
+    if (profile?.type == 'tv') {
+      return ["Home", "TV Posts", "About"];
+    }
+
+    // Standard Profiles
     final baseTabs = [
       "Home",
       "Posts",
@@ -158,10 +165,12 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
       "Live",
       "Playlists",
     ];
+
     if (profile?.type == 'business') {
       baseTabs.add("Products");
       baseTabs.add("Jobs");
     }
+
     baseTabs.add("About");
     return baseTabs;
   }
@@ -323,13 +332,53 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          _profile!.name,
-                                          style: const TextStyle(
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.black,
-                                          ),
+                                        Row(
+                                          children: [
+                                            Flexible(
+                                              child: Text(
+                                                _profile!.name,
+                                                style: const TextStyle(
+                                                  fontSize: 24,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.black,
+                                                ),
+                                              ),
+                                            ),
+                                            if (_profile?.type == 'tv') ...[
+                                              const SizedBox(width: 8),
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 8,
+                                                  vertical: 4,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.blue,
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                                child: const Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Icon(Icons.tv,
+                                                        size: 14,
+                                                        color: Colors.white),
+                                                    SizedBox(width: 4),
+                                                    Text(
+                                                      'TV',
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 10,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ],
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
@@ -573,6 +622,16 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
   }
 
   List<Widget> _getTabViewsForProfile(Profile? profile) {
+    // TV Profile Views
+    if (profile?.type == 'tv') {
+      return [
+        HomeTab(profileId: widget.profileId),
+        TVPostsTab(profileId: widget.profileId), // Staggered grid for TV
+        AboutTab(profileId: widget.profileId),
+      ];
+    }
+
+    // Standard Profile Views
     final List<Widget> baseTabViews = [
       HomeTab(profileId: widget.profileId),
       PostsTab(profileId: widget.profileId),
@@ -581,10 +640,12 @@ class _ProfilePageScreenState extends State<ProfilePageScreen>
       LiveTab(profileId: widget.profileId),
       PlaylistsTab(profileId: widget.profileId),
     ];
+
     if (profile != null && profile.type == 'business') {
       baseTabViews.add(ProductsTab(profileId: widget.profileId));
       baseTabViews.add(JobsTab(profileId: widget.profileId));
     }
+
     baseTabViews.add(AboutTab(profileId: widget.profileId));
     return baseTabViews;
   }

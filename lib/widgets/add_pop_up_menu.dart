@@ -21,6 +21,7 @@ class _CreateRowDialogState extends State<CreateRowDialog> {
   static const int maxBusinessLimit = 5;
   static const int maxThreadLimit = 5;
   static const int maxChannelLimit = 5;
+  static const int maxTVLimit = 10;
   // ===========================================================
 
   final _formKey = GlobalKey<FormState>();
@@ -28,7 +29,9 @@ class _CreateRowDialogState extends State<CreateRowDialog> {
   final _bioController = TextEditingController();
   final _handleController = TextEditingController();
   final _locationController = TextEditingController();
+  final _rssUrlController = TextEditingController();
   String _selectedType = "profile";
+  String _selectedCategory = "Tech";
   File? _profileImage;
   File? _bannerImage;
 
@@ -41,6 +44,7 @@ class _CreateRowDialogState extends State<CreateRowDialog> {
     _bioController.dispose();
     _handleController.dispose();
     _locationController.dispose();
+    _rssUrlController.dispose();
     super.dispose();
   }
 
@@ -118,6 +122,10 @@ class _CreateRowDialogState extends State<CreateRowDialog> {
             maxLimit = maxChannelLimit;
             typeName = 'Channel';
             break;
+          case 'tv':
+            maxLimit = maxTVLimit;
+            typeName = 'TV Profile';
+            break;
           default:
             maxLimit = 1;
             typeName = _selectedType.isEmpty
@@ -185,15 +193,27 @@ class _CreateRowDialogState extends State<CreateRowDialog> {
           bannerImageId = file.$id;
         }
 
-        await appwriteService.createProfile(
-          name: _nameController.text,
-          type: _selectedType,
-          bio: _bioController.text,
-          handle: _handleController.text,
-          location: _locationController.text,
-          profileImageUrl: profileImageId ?? '',
-          bannerImageUrl: bannerImageId ?? '',
-        );
+        if (_selectedType == 'tv') {
+          await appwriteService.createTVProfile(
+            name: _nameController.text,
+            bio: _bioController.text,
+            handle: _handleController.text,
+            rssUrl: _rssUrlController.text,
+            category: _selectedCategory,
+            profileImageUrl: profileImageId,
+            bannerImageUrl: bannerImageId,
+          );
+        } else {
+          await appwriteService.createProfile(
+            name: _nameController.text,
+            type: _selectedType,
+            bio: _bioController.text,
+            handle: _handleController.text,
+            location: _locationController.text,
+            profileImageUrl: profileImageId,
+            bannerImageUrl: bannerImageId,
+          );
+        }
 
         if (!mounted) return;
 
@@ -209,7 +229,9 @@ class _CreateRowDialogState extends State<CreateRowDialog> {
           _nameController.clear();
           _bioController.clear();
           _handleController.clear();
+          _handleController.clear();
           _locationController.clear();
+          _rssUrlController.clear();
           setState(() {
             _profileImage = null;
             _bannerImage = null;
@@ -322,6 +344,7 @@ class _CreateRowDialogState extends State<CreateRowDialog> {
                           "channel",
                           "thread",
                           "business",
+                          "tv",
                         ],
                         onChanged: (newValue) {
                           setState(() {
@@ -340,12 +363,41 @@ class _CreateRowDialogState extends State<CreateRowDialog> {
                         icon: Icons.description,
                       ),
                       const SizedBox(height: 24),
-                      CustomTextField(
-                        controller: _locationController,
-                        label: "Location",
-                        hintText: "Enter your location",
-                        icon: Icons.location_on,
-                      ),
+                      if (_selectedType != 'tv')
+                        CustomTextField(
+                          controller: _locationController,
+                          label: "Location",
+                          hintText: "Enter your location",
+                          icon: Icons.location_on,
+                        ),
+                      if (_selectedType == 'tv') ...[
+                        CustomTextField(
+                          controller: _rssUrlController,
+                          label: "RSS Feed URLs",
+                          hintText: "Enter RSS feed URLs (comma-separated)",
+                          icon: Icons.rss_feed,
+                          isSingleLine: false,
+                          minLines: 2,
+                        ),
+                        const SizedBox(height: 24),
+                        CustomDropdown(
+                          label: "Category",
+                          value: _selectedCategory,
+                          items: const [
+                            "Tech",
+                            "News",
+                            "Education",
+                            "Business",
+                            "Entertainment",
+                          ],
+                          onChanged: (newValue) {
+                            setState(() {
+                              _selectedCategory = newValue!;
+                            });
+                          },
+                          icon: Icons.category_outlined,
+                        ),
+                      ],
                     ],
                   ),
                 ),

@@ -10,6 +10,7 @@ import 'hmv_question_tabscreen.dart';
 import 'hmv_files_tabscreen.dart';
 import 'hmv_music_tabscreen.dart';
 import 'hmv_photos_tabscreen.dart';
+import 'hmv_tv_tabscreen.dart';
 
 import 'hmv_feature_tabscreen.dart';
 import 'cnm_chats_tabscreen.dart';
@@ -35,6 +36,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     'videos',
     'news',
     'following',
+    'tv',
     'questions',
     'files',
     'forum',
@@ -66,9 +68,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       fn(); // Perform the state change (add/remove tab)
       _initializeController(); // Create a new controller
       // Try to restore the previous index if it's still valid
-      _mainTabController.index = (oldIndex < _tabs.length)
-          ? oldIndex
-          : _tabs.length - 1;
+      _mainTabController.index =
+          (oldIndex < _tabs.length) ? oldIndex : _tabs.length - 1;
     });
   }
 
@@ -188,9 +189,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     child: Text(
                       _tabs[tabIndex],
                       style: theme.textTheme.bodyLarge?.copyWith(
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.normal,
+                        fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.normal,
                         color: isSelected ? selectedColor : unselectedColor,
                         shadows: [
                           Shadow(
@@ -234,6 +234,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           return const HMVNewsTabscreen();
         } else if (name == 'following') {
           return const HMVFollowingTabscreen();
+        } else if (name == 'tv') {
+          return const HmvTVTabScreen();
         } else if (name == 'forum') {
           return const HmvForumTabscreen();
         } else if (name == 'questions') {
