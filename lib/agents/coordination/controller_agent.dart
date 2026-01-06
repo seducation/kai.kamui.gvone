@@ -15,6 +15,8 @@ import 'execution_manager.dart';
 import 'agent_capability.dart' show RoutableTask;
 import 'autonomic_system.dart';
 import 'sleep_manager.dart';
+import 'immune_system.dart';
+import 'reflex_system.dart';
 
 /// Function type for AI planning
 typedef PlanningFunction = Future<ActionPlan> Function(
@@ -50,6 +52,8 @@ class ControllerAgent extends AgentBase with AgentDelegation {
   final ExecutionManager executionManager = ExecutionManager();
   final AutonomicSystem autonomicSystem = AutonomicSystem();
   final SleepManager sleepManager = SleepManager();
+  final ImmuneSystem immuneSystem = ImmuneSystem();
+  final ReflexSystem reflexSystem = ReflexSystem();
 
   ControllerAgent({
     required this.registry,
@@ -77,6 +81,10 @@ class ControllerAgent extends AgentBase with AgentDelegation {
     // Start life support
     autonomicSystem.start();
     sleepManager.start();
+
+    // Start active defense
+    immuneSystem.start();
+    reflexSystem.start();
 
     // Register capabilities if not already done
     // In a real app, this would happen dynamically as agents register
@@ -289,6 +297,13 @@ class ControllerAgent extends AgentBase with AgentDelegation {
 
   /// Handle a user request
   Future<R> handleRequest<R>(String userRequest) async {
+    // Step 0: Spinal Reflex Check (Instant Safety)
+    if (reflexSystem.checkReflex(userRequest)) {
+      logStatus(StepType.error, 'Blocked by Reflex System', StepStatus.failed);
+      throw SecurityException(
+          'Request blocked by biological reflex: Dangerous content detected');
+    }
+
     // Step 1: Check if we can handle this locally
     final canHandle = await execute<bool>(
       action: StepType.check,
@@ -445,10 +460,12 @@ ControllerAgent getController({
   MessageBus? bus,
   TaskQueue? queue,
 }) {
-  _globalController ??= ControllerAgent(
-    registry: registry ?? agentRegistry,
-    bus: bus ?? messageBus,
-    queue: queue ?? taskQueue,
-  );
   return _globalController!;
+}
+
+class SecurityException implements Exception {
+  final String message;
+  SecurityException(this.message);
+  @override
+  String toString() => 'SecurityException: $message';
 }

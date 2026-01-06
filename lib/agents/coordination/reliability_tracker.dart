@@ -71,6 +71,14 @@ class ReliabilityTracker {
     return entries.map((e) => e.key).toList();
   }
 
+  /// Get agents with reliability below a threshold
+  List<String> getFailingAgents({double threshold = 0.5}) {
+    return _stats.entries
+        .where((e) => e.value.reliabilityScore < threshold)
+        .map((e) => e.key)
+        .toList();
+  }
+
   /// Update agent profile reliability from stats
   void updateProfileReliability(AgentProfile profile) {
     final stats = _stats[profile.agentName];

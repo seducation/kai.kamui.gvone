@@ -56,6 +56,13 @@ A powerful, visual, and persistent multi-agent orchestration system built with F
   - **Deep Sleep**: Compacts execution history and re-indexes the failure vault.
 - **Instant Wake**: All background processes yield immediately when the user interacts or sends a request.
 
+### 10. Immune & Reflex Systems (Active Robustness) 🛡️⚡
+- **Immune System**: Scans for "pathogens" (failing agents) and tracks system "inflammation" (error spikes). Triggers **Fever Mode** (Safe Mode) to prevent data loss when error rates are high.
+- **Reflex System**: Acts as the spinal cord, intercepting dangerous commands (e.g., `rm -rf`, `sudo`) *before* they reach the Planner, providing instant safety.
+
+- [x] **Immune System**: Active defense against "pathogens" (errors) and system "inflammation" (Safe Mode).
+- [x] **Reflex System**: Spinal Cord interception of dangerous inputs before they reach the Brain.
+
 ## 🛠️ Tech Stack & Architecture
 
 - **Framework**: Flutter (Dart)
@@ -65,6 +72,8 @@ A powerful, visual, and persistent multi-agent orchestration system built with F
   - **ReliabilityTracker**: The performance-based hippocampus (memory).
   - **AutonomicSystem**: The involuntary nervous system for health maintenance.
   - **SleepManager**: The circadian management for resource optimization.
+  - **ImmuneSystem**: The lymphatic defense system.
+  - **ReflexSystem**: The spinal cord for instant safety reactions.
 
 ## 🚀 Getting Started
 
