@@ -94,7 +94,7 @@ class _ControlButton extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.black.withValues(alpha: 0.5),
+        color: Colors.black54,
       ),
       child: IconButton(
         icon: Icon(icon),
