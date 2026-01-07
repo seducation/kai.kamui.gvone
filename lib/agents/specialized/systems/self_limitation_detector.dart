@@ -6,11 +6,11 @@
 ///
 /// Key Principle: Admitting limitations INCREASES perceived intelligence.
 class SelfLimitationDetector {
-  static const double CONFIDENCE_THRESHOLD = 0.6;
-  static const double HIGH_RISK_THRESHOLD = 0.8;
+  static const double confidenceThreshold = 0.6;
+  static const double highRiskThreshold = 0.8;
 
   /// Keywords that indicate irreversible/destructive actions
-  static const List<String> IRREVERSIBLE_ACTIONS = [
+  static const List<String> irreversibleActions = [
     'delete',
     'drop',
     'remove',
@@ -24,7 +24,7 @@ class SelfLimitationDetector {
   ];
 
   /// Keywords that indicate high-risk operations
-  static const List<String> HIGH_RISK_KEYWORDS = [
+  static const List<String> highRiskKeywords = [
     'production',
     'deploy',
     'migrate',
@@ -39,19 +39,19 @@ class SelfLimitationDetector {
 
   /// Check if confidence is too low for autonomous action
   bool isLowConfidence(double confidence) {
-    return confidence < CONFIDENCE_THRESHOLD;
+    return confidence < confidenceThreshold;
   }
 
   /// Check if action is high-risk
   bool isHighRisk(String action) {
     final lowerAction = action.toLowerCase();
-    return HIGH_RISK_KEYWORDS.any((term) => lowerAction.contains(term));
+    return highRiskKeywords.any((term) => lowerAction.contains(term));
   }
 
   /// Check if action cannot be safely reversed
   bool isIrreversible(String action) {
     final lowerAction = action.toLowerCase();
-    return IRREVERSIBLE_ACTIONS.any((term) => lowerAction.contains(term));
+    return irreversibleActions.any((term) => lowerAction.contains(term));
   }
 
   /// Determine the limitation type for an action

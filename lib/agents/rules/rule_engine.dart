@@ -49,6 +49,39 @@ class RuleEngine {
   final List<Rule> _rules = [];
   bool _initialized = false;
   String? _storagePath;
+  ComplianceProfile _activeProfile = ComplianceProfile.personal;
+
+  ComplianceProfile get activeProfile => _activeProfile;
+
+  void setProfile(ComplianceProfile profile) {
+    _activeProfile = profile;
+    _saveRules(); // Persist selection (TODO: Save profile separately ideally)
+  }
+
+  /// Check if an action is allowed by the current Compliance Profile,
+  /// BEFORE checking individual rules.
+  bool checkCompliance(RuleContext context) {
+    switch (_activeProfile) {
+      case ComplianceProfile.restricted:
+        // Read-only mode
+        if (context.action != 'read' && context.action != 'check') {
+          return false;
+        }
+        break;
+      case ComplianceProfile.enterprise:
+        // No local shell execution in enterprise mode (example)
+        if (context.action == 'execute_shell') return false;
+        break;
+      case ComplianceProfile.education:
+        // Block complex/dangerous commands
+        if (context.input.toString().contains('sudo')) return false;
+        break;
+      case ComplianceProfile.personal:
+        // Full access
+        return true;
+    }
+    return true;
+  }
 
   /// Get all active rules
   List<Rule> get rules => List.unmodifiable(_rules);
@@ -82,6 +115,15 @@ class RuleEngine {
         .where((r) => _isScopeRelevant(r, context))
         .toList()
       ..sort((a, b) => b.priority.compareTo(a.priority));
+
+    // 0. Check Compliance Profile (Global "Mode")
+    if (!checkCompliance(context)) {
+      return RuleEvaluationResult(
+        action: RuleAction.deny,
+        explanation:
+            'Blocked by active Compliance Profile: ${_activeProfile.name}',
+      );
+    }
 
     for (final rule in relevantRules) {
       if (_matchesCondition(rule, context)) {
@@ -174,7 +216,7 @@ class RuleEngine {
       _rules.clear();
       _rules.addAll(json.map((j) => Rule.fromJson(j)));
     } catch (e) {
-      print('Error loading rules: $e');
+      // Failed to load rules - using defaults
     }
   }
 

@@ -14,6 +14,8 @@ import 'visual_orchestration_screen.dart';
 import 'api_key_settings_screen.dart';
 import 'rule_priority_screen.dart';
 import 'system_status_row.dart';
+import 'mission_monitor_screen.dart';
+import 'trust_center_screen.dart';
 
 /// Dashboard showing all agents and their status.
 /// Provides overview of the multi-agent system.
@@ -165,6 +167,32 @@ class _AgentDashboardState extends State<AgentDashboard> {
               context,
               MaterialPageRoute(
                 builder: (context) => const VisualOrchestrationScreen(),
+              ),
+            );
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.rocket_launch, color: Colors.cyanAccent),
+          title: const Text('Mission Control'),
+          subtitle: const Text('Objectives, Constraints & Simulations'),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const MissionMonitorScreen(),
+              ),
+            );
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.shield, color: Colors.indigoAccent),
+          title: const Text('Trust & Control Center'),
+          subtitle: const Text('Explainability, Compliance & Safety'),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const TrustCenterScreen(),
               ),
             );
           },

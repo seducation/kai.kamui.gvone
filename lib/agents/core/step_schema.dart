@@ -170,11 +170,15 @@ class ActionPlan {
   /// When this plan was created
   final DateTime createdAt;
 
+  /// Aggregate confidence score for the entire plan (0.0 to 1.0)
+  final double confidence;
+
   const ActionPlan({
     required this.planId,
     required this.userRequest,
     required this.tasks,
     required this.createdAt,
+    this.confidence = 1.0,
   });
 
   Map<String, dynamic> toJson() {
@@ -183,6 +187,7 @@ class ActionPlan {
       'user_request': userRequest,
       'tasks': tasks.map((t) => t.toJson()).toList(),
       'created_at': createdAt.toIso8601String(),
+      'confidence': confidence,
     };
   }
 }
@@ -204,12 +209,16 @@ class PlannedTask {
   /// Optional configuration for the task
   final Map<String, dynamic>? config;
 
+  /// Predicted confidence for this specific task
+  final double confidence;
+
   const PlannedTask({
     required this.agentName,
     required this.action,
     required this.target,
     this.dependsOn = const [],
     this.config,
+    this.confidence = 1.0,
   });
 
   Map<String, dynamic> toJson() {
@@ -219,6 +228,7 @@ class PlannedTask {
       'target': target,
       'depends_on': dependsOn,
       if (config != null) 'config': config,
+      'confidence': confidence,
     };
   }
 }

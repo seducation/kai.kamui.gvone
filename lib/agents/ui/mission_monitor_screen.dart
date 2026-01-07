@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../coordination/mission_controller.dart';
-import '../coordination/agent_capability.dart'; // For ConfidenceLevel
 
 /// Screen to monitor active missions and simulations
 class MissionMonitorScreen extends StatefulWidget {
@@ -60,8 +59,9 @@ class _MissionMonitorScreenState extends State<MissionMonitorScreen> {
                     itemCount: missions.length,
                     itemBuilder: (context, index) {
                       final mission = missions[index];
-                      if (mission.id == active?.id)
+                      if (mission.id == active?.id) {
                         return const SizedBox.shrink(); // Skip active
+                      }
                       return _buildMissionTile(mission);
                     },
                   ),

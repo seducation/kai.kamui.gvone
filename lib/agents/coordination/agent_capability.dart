@@ -217,7 +217,7 @@ class TaskRouting {
   final DateTime routedAt;
 
   /// Threshold below which decisions should be escalated
-  static const double ESCALATION_THRESHOLD = 0.6;
+  static const double escalationThreshold = 0.6;
 
   TaskRouting({
     required this.task,
@@ -265,7 +265,7 @@ class TaskRouting {
   }
 
   /// Check if this decision should be escalated for human review
-  bool get shouldEscalate => confidence < ESCALATION_THRESHOLD;
+  bool get shouldEscalate => confidence < escalationThreshold;
 
   /// Human-readable confidence display
   String get confidenceDisplay => '${(confidence * 100).toStringAsFixed(0)}%';

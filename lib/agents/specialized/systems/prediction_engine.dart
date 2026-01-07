@@ -1,6 +1,3 @@
-import 'dart:async';
-import '../coordination/agent_registry.dart';
-
 /// Prediction Engine (Strategic Anticipation) 🔮
 ///
 /// Tracks user command patterns to preload agents and tools.
@@ -56,12 +53,15 @@ class PredictionEngine {
   }
 
   String? _mapCommandToAgent(String command) {
-    if (command.contains('code') || command.contains('write'))
+    if (command.contains('code') || command.contains('write')) {
       return 'CodeWriter';
-    if (command.contains('crawl') || command.contains('web'))
+    }
+    if (command.contains('crawl') || command.contains('web')) {
       return 'WebCrawler';
-    if (command.contains('test') || command.contains('debug'))
+    }
+    if (command.contains('test') || command.contains('debug')) {
       return 'CodeDebugger';
+    }
     return null;
   }
 }

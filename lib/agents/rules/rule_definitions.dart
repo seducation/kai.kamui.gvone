@@ -11,12 +11,24 @@ class PriorityLevel {
   static const int sleep = 10; // Maintenance, cleanup
 
   static String getName(int level) {
-    if (level >= reflex) return 'Reflex';
-    if (level >= critical) return 'Critical';
-    if (level >= emergency) return 'Emergency';
-    if (level >= high) return 'High';
-    if (level >= normal) return 'Normal';
-    if (level >= low) return 'Low';
+    if (level >= reflex) {
+      return 'Reflex';
+    }
+    if (level >= critical) {
+      return 'Critical';
+    }
+    if (level >= emergency) {
+      return 'Emergency';
+    }
+    if (level >= high) {
+      return 'High';
+    }
+    if (level >= normal) {
+      return 'Normal';
+    }
+    if (level >= low) {
+      return 'Low';
+    }
     return 'Sleep';
   }
 }
@@ -117,6 +129,14 @@ enum RuleAction {
   escalate, // Require human/higher approval
   defer, // Lower priority or wait
   simulate, // Run counterfactual simulation (NEW)
+}
+
+/// Operational profiles for the system
+enum ComplianceProfile {
+  personal, // Flexible, local control
+  enterprise, // Strict data boundaries, logging
+  education, // Explains everything, safe search
+  restricted, // Read-only, minimal actions
 }
 
 /// A deterministic rule governing system behavior.

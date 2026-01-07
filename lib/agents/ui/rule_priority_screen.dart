@@ -76,7 +76,7 @@ class _RulePriorityScreenState extends State<RulePriorityScreen>
             subtitle: Text(rule.explanation),
             trailing: Chip(
               label: Text('P${rule.priority}'),
-              backgroundColor: Colors.blue.withOpacity(0.1),
+              backgroundColor: Colors.blue.withValues(alpha: 0.1),
             ),
             children: [
               Padding(
@@ -161,7 +161,7 @@ class _RulePriorityScreenState extends State<RulePriorityScreen>
   Widget _buildTaskTile(QueuedTask task) {
     return Card(
       elevation: 0,
-      color: Colors.blue.withOpacity(0.05),
+      color: Colors.blue.withValues(alpha: 0.05),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: ListTile(
         leading: const CircularProgressIndicator(strokeWidth: 2),
@@ -200,6 +200,8 @@ class _RulePriorityScreenState extends State<RulePriorityScreen>
         return Icons.security;
       case RuleAction.defer:
         return Icons.timer;
+      case RuleAction.simulate:
+        return Icons.science;
     }
   }
 
@@ -215,6 +217,8 @@ class _RulePriorityScreenState extends State<RulePriorityScreen>
         return Colors.orange;
       case RuleAction.defer:
         return Colors.purple;
+      case RuleAction.simulate:
+        return Colors.cyan;
     }
   }
 

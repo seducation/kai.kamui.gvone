@@ -17,6 +17,23 @@ class ReflexSystem {
 
   final MessageBus _bus = messageBus;
   bool _isActive = false;
+  bool _isFrozen = false; // Emergency Freeze (New)
+
+  bool get isFrozen => _isFrozen;
+
+  void freeze() {
+    _isFrozen = true;
+    _bus.broadcast(AgentMessage(
+      id: 'emergency_freeze',
+      from: 'ReflexSystem',
+      type: MessageType.error,
+      payload: 'SYSTEM_FREEZE: All autonomous actions halted.',
+    ));
+  }
+
+  void unfreeze() {
+    _isFrozen = false;
+  }
 
   // Dangerous keywords that trigger a "Pain" withdrawal reflex
   static const List<String> _dangerSignals = [

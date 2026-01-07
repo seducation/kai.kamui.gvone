@@ -63,15 +63,22 @@ A powerful, visual, and persistent multi-agent orchestration system built with F
 - **Interactive Management**: Dedicated **Rules & Priority Engine UI** to monitor active rules and the prioritized task pipeline.
 
 ### 11. Behavioral Intelligence (JARVIS-Level: 95% Certified) 🎭🔮
-- **Mission Mode**: Long-running objectives with success criteria, constraints, and automatic progress tracking. The system knows *what* it is trying to achieve.
+- **Mission Mode**: Long-running objectives with success criteria, constraints, and automatic progress tracking. The system knows *what* it is trying to achieve via **Mission Contracts**.
 - **Counterfactual Simulation**: Before executing high-risk actions (e.g., delete, deploy), the system hallucinates 2-3 possible outcomes, calculates risk scores, and chooses the safest path.
+- **Explainability Engine (Black Box)**: Every AI decision is recorded with a full "Trace" of factors (Rules, Priority, Simulation, Mission) to answer *"Why did you do that?"*.
+- **Confidence Drift Monitor**: Continuously tracks "Confidence Inflation" (predicted vs actual success). Detects overconfident agents and automatically applies correction multipliers.
+- **Compliance Mode Profiles**: Global operational modes (`Personal`, `Enterprise`, `Education`, `Restricted`) that automatically enforce safety boundaries and feature limits.
+- **Human Override Protocols**: Formal safety rituals for high-stakes actions:
+  - **Dual Confirmation**: Requires explicit re-authorization for recursive or destructive tasks.
+  - **Time-Delayed Execution**: Mandatory waiting periods for critical deployments.
+  - **Emergency Freeze**: Instant halt of all autonomous systems via the Reflex Spinal Cord.
 - **Self-Limitation Awareness**: "I'm not entirely certain." The system honestly reports confidence gaps and refuses to guess when stakes are high.
 - **Authority Escalation**: A rigid 6-tier hierarchy (`Reflex` > `Safety` > `System` > `Mission` > `User` > `Agent`) ensuring the user always retains ultimate control.
+- **Agent Reputation Ledger**: Full accountability tracking for every agent, including reliability scores, failure types, and cooldown penalties.
 - **Confidence Scoring**: Every plan comes with a visible confidence score (0-100%) and transparency into *why* the AI feels that way.
-- **Persona Gateway**: Enforces a consistent JARVIS-like tone and brevity across all system outputs.
+- **Persona Gateway**: Enforces a consistent JARVIS-like tone across all system outputs.
 - **Narrator Agent**: Real-time internal voice providing status updates via Broca's area.
 - **Reactive Preemption**: True task halting using `CancellationToken` for high-priority interrupts.
-- **Psychological Pacing**: Intentional "thinking" delays modulated by task priority for perceived thoughtfulness.
 - **Prediction Engine**: Anticipates user needs by preloading agents based on command history patterns.
 
 ### 12. Motor System & Muscles 🦾
@@ -85,6 +92,8 @@ A powerful, visual, and persistent multi-agent orchestration system built with F
 - **Organ Monitor**: Real-time visualization of metabolic states and organ health.
 - **Volition Stream**: A live feed of the AI's "Stream of Consciousness" and internal drives.
 - **Quarantine Zone**: visual management of agents locked by the Reflex System.
+- **Mission Monitor**: Dedicated UI for tracking active goals, confidence drift, and constraint enforcement.
+- **Decision Trace UI**: Inspect the "Black Box" explainability trances for every system action.
 
 ### 14. Dreaming Mode (Simulation & Optimization) 🌙
 - **Sandboxed Analysis**: Offline, non-executing phase that runs during REM sleep to optimize system parameters without affecting production.

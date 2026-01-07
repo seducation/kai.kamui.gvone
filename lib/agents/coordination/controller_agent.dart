@@ -19,6 +19,9 @@ import '../rules/rule_engine.dart';
 import '../rules/rule_definitions.dart'; // New
 import 'mission_controller.dart'; // New (Mission Mode)
 import 'simulation_engine.dart'; // New (Counterfactuals)
+import '../specialized/systems/explainability_engine.dart'; // New (Trust)
+import '../specialized/systems/confidence_drift_monitor.dart'; // New (Accuracy)
+import '../rules/safety_protocols.dart'; // New (Rituals)
 
 /// Function type for AI planning
 typedef PlanningFunction = Future<ActionPlan> Function(
@@ -60,6 +63,12 @@ class ControllerAgent extends AgentBase with AgentDelegation {
   final TimingController timing = TimingController(); // New: Pacing
   final PredictionEngine prediction = PredictionEngine(); // New: Predictive
   final RuleEngine ruleEngine = RuleEngine(); // New: Supreme Authority
+  final ExplainabilityEngine explainability =
+      ExplainabilityEngine(); // New: Trust Monitor
+  final ConfidenceDriftMonitor confidenceMonitor =
+      ConfidenceDriftMonitor(); // New: Accuracy Monitor
+  final SafetyProtocols protocols =
+      SafetyProtocols(); // New: Override Protocols
   late final NarratorAgent narrator; // New: Internal Voice
 
   // Organs (for UI monitoring)
@@ -397,8 +406,46 @@ class ControllerAgent extends AgentBase with AgentDelegation {
 
   /// Handle a user request
   Future<R> handleRequest<R>(String userRequest, {int? priority}) async {
+    // Start Decision Trace
+    final trace = explainability.startTrace(userRequest);
+
+    // 0. Emergency Freeze Check
+    if (reflexSystem.isFrozen) {
+      trace.finalOutcome = 'Blocked';
+      trace.addFactor(
+          source: 'SafetyProtocols', reason: 'System is frozen', weight: -1.0);
+      throw SecurityException(
+          'System is currently FROZEN. No autonomous actions allowed.');
+    }
+
     // Step 0a: Priority Detection
     final detectedPriority = priority ?? _detectPriority(userRequest);
+
+    // 0.5 Human Override: Dual Confirmation for High Stakes
+    if (_isHighStakes(userRequest)) {
+      final isConfirmed = protocols.requestDualConfirmation(userRequest);
+      if (!isConfirmed) {
+        trace.finalOutcome = 'Pending Confirmation';
+        trace.addFactor(
+            source: 'SafetyProtocols',
+            reason: 'Dual Confirmation Required',
+            weight: -0.5);
+
+        logStatus(StepType.check, 'Waiting for Dual Confirmation',
+            StepStatus.pending);
+        throw SecurityException(
+            '⚠️ HIGH STAKES ACTION DETECTED ⚠️\nConfirmation Required: Please repeat the exact command to authorize.');
+      }
+      trace.addFactor(
+          source: 'SafetyProtocols',
+          reason: 'Dual Confirmation VERIFIED',
+          weight: 1.0);
+    }
+
+    trace.addFactor(
+        source: 'PrioritySystem',
+        reason: 'Detected priority: $detectedPriority',
+        weight: 0.1);
 
     // Step 0b: Rule Engine Evaluation (Supreme Authority)
     final ruleResult = ruleEngine.evaluate(RuleContext(
@@ -409,6 +456,13 @@ class ControllerAgent extends AgentBase with AgentDelegation {
     ));
 
     if (!ruleResult.isAllowed && ruleResult.action != RuleAction.simulate) {
+      trace.finalOutcome = 'Blocked';
+      trace.addFactor(
+          source: 'RuleEngine',
+          reason: ruleResult.explanation,
+          weight: -1.0, // CRITICAL BLOCK
+          metadata: {'ruleId': ruleResult.triggeringRule?.id});
+
       logStatus(
           StepType.error,
           'Blocked by Rule Engine: ${ruleResult.explanation}',
@@ -417,11 +471,23 @@ class ControllerAgent extends AgentBase with AgentDelegation {
           'Request blocked by system rules: ${ruleResult.explanation}');
     }
 
+    // Log allowed rule
+    trace.addFactor(
+        source: 'RuleEngine',
+        reason: 'Allowed (Compliance: ${ruleEngine.activeProfile.name})',
+        weight: 0.5);
+
     // Apply any modifications from rules
     final effectiveRequest = ruleResult.modification ?? userRequest;
 
     // Step 0c: Spinal Reflex Check (Instant Safety - Second Layer)
     if (reflexSystem.checkReflex(effectiveRequest)) {
+      trace.finalOutcome = 'Blocked';
+      trace.addFactor(
+          source: 'ReflexSystem',
+          reason: 'Biological reflex triggered',
+          weight: -1.0);
+
       logStatus(StepType.error, 'Blocked by Reflex System', StepStatus.failed);
       throw SecurityException(
           'Request blocked by biological reflex: Dangerous content detected');
@@ -430,6 +496,11 @@ class ControllerAgent extends AgentBase with AgentDelegation {
     // Step 0g: Counterfactual Simulation (Dynamic Safety)
     if (ruleResult.action == RuleAction.simulate ||
         simulationEngine.shouldSimulate(effectiveRequest)) {
+      trace.addFactor(
+          source: 'SimulationEngine',
+          reason: 'Simulation triggered',
+          weight: 0.0);
+
       final simResults = await simulationEngine.simulateAction(
         agentName: name,
         action: effectiveRequest,
@@ -440,11 +511,23 @@ class ControllerAgent extends AgentBase with AgentDelegation {
             ? simResults.first.predictedOutcome
             : 'High risk detected';
 
+        trace.finalOutcome = 'Blocked';
+        trace.addFactor(
+            source: 'SimulationEngine',
+            reason: 'High risk outcome: $warning',
+            weight: -1.0,
+            metadata: {'riskScore': simResults.firstOrNull?.riskScore});
+
         logStatus(StepType.error, 'Blocked by Simulation: $warning',
             StepStatus.failed);
         throw SecurityException(
             'Action blocked by counterfactual simulation: $warning');
       }
+
+      trace.addFactor(
+          source: 'SimulationEngine',
+          reason: 'Simulation passed: ${simResults.first.riskEmoji}',
+          weight: 0.8);
 
       logger.logStep(
         agentName: name,
@@ -462,6 +545,12 @@ class ControllerAgent extends AgentBase with AgentDelegation {
 
     // Step 0f: Mission Constraints (Long-running context)
     if (!missionController.checkConstraints(effectiveRequest)) {
+      trace.finalOutcome = 'Blocked';
+      trace.addFactor(
+          source: 'MissionController',
+          reason: 'Violated active mission constraints',
+          weight: -1.0);
+
       logStatus(
           StepType.error, 'Blocked by Mission Constraints', StepStatus.failed);
       throw SecurityException('Request blocked by active mission constraints');
@@ -487,12 +576,21 @@ class ControllerAgent extends AgentBase with AgentDelegation {
             await _createPlan(effectiveRequest, priority: detectedPriority),
       );
 
+      trace.finalOutcome = 'Approved';
+      trace.addFactor(
+          source: 'Planner',
+          reason: 'Plan created with ${plan.tasks.length} tasks',
+          weight: 1.0);
+
       // Step 3: Execute the plan
       final result = await execute<R>(
         action: StepType.analyze,
         target: 'executing ${plan.tasks.length} tasks',
         task: () async => await _executePlan<R>(plan),
       );
+
+      // Record Confidence Outcome (Elite Behavior)
+      confidenceMonitor.recordOutcome(name, plan.confidence, true);
 
       // Step 4: Mark complete
       logStatus(StepType.complete, effectiveRequest, StepStatus.success);
@@ -502,6 +600,15 @@ class ControllerAgent extends AgentBase with AgentDelegation {
 
       return result;
     } catch (e) {
+      // Record Confidence Outcome for errors
+      // Use logic to find if a plan was created
+      // (This is a simplified check)
+
+      if (trace.finalOutcome == 'Pending') {
+        trace.finalOutcome = 'Error';
+        trace.addFactor(
+            source: 'Execution', reason: e.toString(), weight: -0.5);
+      }
       _admitMistake(e);
       rethrow;
     }
@@ -592,9 +699,11 @@ class ControllerAgent extends AgentBase with AgentDelegation {
           action: _mapCategoryToAction(routing.matchedCapability.category),
           target: request,
           config: {'priority': priority ?? PriorityLevel.normal},
+          confidence: routing.confidence,
         )
       ],
       createdAt: DateTime.now(),
+      confidence: routing.confidence,
     );
   }
 
@@ -658,6 +767,18 @@ class ControllerAgent extends AgentBase with AgentDelegation {
 
   /// Get all registered agent capabilities
   List<String> get capabilities => registry.agentNames;
+
+  /// Check if the request involves high-stakes actions requiring dual confirmation
+  bool _isHighStakes(String request) {
+    final lower = request.toLowerCase();
+    return lower.contains('delete') ||
+        lower.contains('destroy') ||
+        lower.contains('deploy') ||
+        lower.contains('override') ||
+        lower.contains('reset') ||
+        lower.contains('format') ||
+        lower.contains('nuke');
+  }
 }
 
 /// Global controller instance

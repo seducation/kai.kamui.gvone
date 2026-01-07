@@ -3,7 +3,6 @@ import 'package:uuid/uuid.dart';
 import '../core/step_logger.dart';
 import '../core/step_types.dart';
 import '../core/step_schema.dart';
-import 'execution_manager.dart';
 import 'reliability_tracker.dart';
 import '../rules/rule_engine.dart';
 import '../rules/rule_definitions.dart';
@@ -74,18 +73,12 @@ class SimulationEngine {
   final GlobalStepLogger _logger = GlobalStepLogger();
   final ReliabilityTracker _reliability = ReliabilityTracker();
   final RuleEngine _ruleEngine = RuleEngine();
-  ExecutionManager? _executionManager;
-
-  /// Set the execution manager for dry-run capability
-  void setExecutionManager(ExecutionManager manager) {
-    _executionManager = manager;
-  }
 
   /// Risk threshold above which simulation is triggered
-  static const double RISK_THRESHOLD = 0.5;
+  static const double riskThreshold = 0.5;
 
   /// Actions that always require simulation
-  static const List<String> HIGH_RISK_ACTIONS = [
+  static const List<String> highRiskActions = [
     'delete',
     'drop',
     'format',
@@ -98,7 +91,7 @@ class SimulationEngine {
   /// Check if action should be simulated
   bool shouldSimulate(String action) {
     final lowerAction = action.toLowerCase();
-    return HIGH_RISK_ACTIONS.any((term) => lowerAction.contains(term));
+    return highRiskActions.any((term) => lowerAction.contains(term));
   }
 
   /// Simulate an action and return possible outcomes
@@ -181,7 +174,7 @@ class SimulationEngine {
     if (results.isEmpty) return false;
 
     final safest = selectSafestPath(results);
-    return safest.riskScore < RISK_THRESHOLD;
+    return safest.riskScore < riskThreshold;
   }
 
   // ============================================================
