@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../coordination/mission_controller.dart';
+import 'widgets/risk_forecast_widget.dart';
 
 /// Screen to monitor active missions and simulations
 class MissionMonitorScreen extends StatefulWidget {
@@ -69,13 +70,7 @@ class _MissionMonitorScreenState extends State<MissionMonitorScreen> {
               ],
             ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // TODO: Show create mission dialog
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Mission creation dialog not implemented yet')),
-          );
-        },
+        onPressed: () => _showCreateMissionDialog(context),
         icon: const Icon(Icons.add_task),
         label: const Text('New Mission'),
         backgroundColor: Colors.cyanAccent,
@@ -135,6 +130,14 @@ class _MissionMonitorScreenState extends State<MissionMonitorScreen> {
             final isDone = mission.completedCriteria.contains(c);
             return _buildCheckbox(c, isDone);
           }),
+          const SizedBox(height: 16),
+          // Phase 11 Integration: Risk Forecast
+          RiskForecastWidget(
+            successProbability: mission.confidencePercent / 100,
+            riskFactors: mission.confidencePercent < 60
+                ? ['Low plan confidence detected', 'Possible logic drift']
+                : [],
+          ),
         ],
       ),
     );
@@ -149,9 +152,7 @@ class _MissionMonitorScreenState extends State<MissionMonitorScreen> {
         style: TextStyle(color: Colors.white70),
       ),
       trailing: _buildStatusBadge(mission.status),
-      onTap: () {
-        // TODO: Show mission details
-      },
+      onTap: () => _showMissionDetails(context, mission),
     );
   }
 
@@ -303,6 +304,116 @@ class _MissionMonitorScreenState extends State<MissionMonitorScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showCreateMissionDialog(BuildContext context) {
+    final objectiveController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A2E),
+        title: const Text('New Mission',
+            style: TextStyle(color: Colors.cyanAccent)),
+        content: TextField(
+          controller: objectiveController,
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
+            labelText: 'Objective',
+            labelStyle: TextStyle(color: Colors.white70),
+            enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.cyanAccent)),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child:
+                const Text('Cancel', style: TextStyle(color: Colors.white54)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent),
+            onPressed: () {
+              if (objectiveController.text.isNotEmpty) {
+                _controller.createMission(Mission(
+                  objective: objectiveController.text,
+                  status: MissionStatus.active,
+                ));
+                Navigator.pop(context);
+                setState(() {});
+              }
+            },
+            child: const Text('Deploy', style: TextStyle(color: Colors.black)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showMissionDetails(BuildContext context, Mission mission) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1A1A2E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    mission.objective,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold),
+                  ),
+                ),
+                _buildStatusBadge(mission.status),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'ID: ${mission.id}',
+              style: const TextStyle(
+                  color: Colors.white38, fontSize: 10, fontFamily: 'Courier'),
+            ),
+            const SizedBox(height: 16),
+            if (mission.notes.isNotEmpty) ...[
+              const Text('NOTES',
+                  style: TextStyle(
+                      color: Colors.cyanAccent,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              ...mission.notes.take(3).map((note) => Text(note,
+                  style: const TextStyle(color: Colors.white70, fontSize: 12))),
+            ] else
+              const Text('No notes available for this mission.',
+                  style: TextStyle(
+                      color: Colors.white38,
+                      fontSize: 12,
+                      fontStyle: FontStyle.italic)),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () => Navigator.pop(context),
+                style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.white24)),
+                child:
+                    const Text('Close', style: TextStyle(color: Colors.white)),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

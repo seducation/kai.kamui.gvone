@@ -1,18 +1,20 @@
 // Dream Mode Data Models
 
 /// Capability types for Dreaming Mode
+/// Capability types for Dreaming Mode (Multi-Layered)
 enum DreamCapability {
-  /// Clusters related vault entries, links cause→effect
+  // Layer 1: Tactical (Task-Level)
+  tacticalSimulation, // Re-runs failed tasks with varied parameters
+
+  // Layer 2: Strategic (Plan-Level)
+  strategicOptimization, // Optimizes frequent workflow patterns
+
+  // Layer 3: Structural (Rule-Level)
+  structuralAnalysis, // Conflict detection and rule consolidation
+
+  // Legacy/Support capabilities
   memoryConsolidation,
-
-  /// Replays failures, detects recurring patterns
   failurePatternAnalysis,
-
-  /// Re-runs old tasks in simulation (non-executing)
-  plannerSimulation,
-
-  /// Finds conflicting/dead/overlapping rules
-  ruleConflictDetection,
 }
 
 /// Status of a dream cycle

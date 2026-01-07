@@ -5,6 +5,7 @@ import '../core/step_logger.dart';
 import '../core/step_types.dart';
 import '../core/step_schema.dart';
 import '../rules/rule_definitions.dart'; // For PriorityLevel
+import 'agent_registry.dart';
 
 /// Priority levels for tasks (Legacy Enum mapped to new system)
 enum TaskPriority {
@@ -309,9 +310,17 @@ class TaskQueue {
 
     final token = CancellationToken();
     task.token = token;
+    final startTime = DateTime.now();
 
     try {
       final result = await task.agent.run(task.input, token: token);
+      final duration = DateTime.now().difference(startTime);
+
+      // Record Success
+      agentRegistry.requireScorecard(task.agent.name).recordResult(
+            success: true,
+            latency: duration,
+          );
 
       // Update Cache on success
       final cacheKey = '${task.agent.name}_${task.input.toString()}';
@@ -325,6 +334,13 @@ class TaskQueue {
         // Re-queue or fail as 'paused'
         task.fail(e);
       } else {
+        // Record Failure (Latency is irrelevant on failure usually, but we capture the time wasted)
+        final duration = DateTime.now().difference(startTime);
+        agentRegistry.requireScorecard(task.agent.name).recordResult(
+              success: false,
+              latency: duration,
+            );
+
         task.fail(e);
         // Cascading Cancellation: Fail any dependent tasks immediately
         _cancelDownstream(taskId);

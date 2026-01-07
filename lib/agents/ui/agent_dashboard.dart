@@ -9,6 +9,7 @@ import '../specialized/organs/volition_organ.dart';
 import 'biological/organ_monitor_widget.dart';
 import 'biological/volition_stream_widget.dart';
 import 'step_stream_widget.dart';
+import 'dream_stream_screen.dart'; // [NEW] DreamStream UI
 import 'dream_reports_screen.dart';
 import 'visual_orchestration_screen.dart';
 import 'api_key_settings_screen.dart';
@@ -148,13 +149,24 @@ class _AgentDashboardState extends State<AgentDashboard> {
         // Navigation
         ListTile(
           leading: const Icon(Icons.nightlight_round, color: Colors.purple),
-          title: const Text('Dream Reports'),
-          subtitle: const Text('Offline Analysis & Optimization'),
+          title: const Text('Dream Stream'),
+          subtitle: const Text('Subconscious Simulation Layer'),
           onTap: () {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const DreamReportsScreen(),
+                // Launch the Matrix-style DreamStream first
+                builder: (context) => DreamStreamScreen(
+                  onWake: () {
+                    // When woken, go to the reports screen
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const DreamReportsScreen(),
+                      ),
+                    );
+                  },
+                ),
               ),
             );
           },

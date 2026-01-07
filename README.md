@@ -62,64 +62,60 @@ A powerful, visual, and persistent multi-agent orchestration system built with F
 - **Priority Scheduler**: Intelligent task queue with integer-based priorities (`Reflex`, `Critical`, `Emergency`, `High`, `Normal`, `Low`).
 - **Interactive Management**: Dedicated **Rules & Priority Engine UI** to monitor active rules and the prioritized task pipeline.
 
-### 11. Behavioral Intelligence (JARVIS-Level: 100% Certified) 🎭🔮
+### 11. Behavioral Intelligence (Cinematic JARVIS Tier) 🎭🔮
 - **Mission Mode**: Long-running objectives with success criteria, constraints, and automatic progress tracking. The system knows *what* it is trying to achieve via **Mission Contracts**.
-- **Counterfactual Simulation**: Before executing high-risk actions (e.g., delete, deploy), the system hallucinates 2-3 possible outcomes, calculates risk scores, and chooses the safest path.
-- **Explainability Engine (Black Box)**: Every AI decision is recorded with a full "Trace" of factors (Rules, Priority, Simulation, Mission) to answer *"Why did you do that?"*.
-- **Confidence Drift Monitor**: Continuously tracks "Confidence Inflation". Detects overconfident agents and automatically applies correction multipliers.
-- **Compliance Mode Profiles**: Global operational modes (`Personal`, `Enterprise`, `Education`, `Restricted`, `Operator`). `Operator Mode` provides the highest precision with zero-autonomy (User-as-Brain).
-- **Human Override Protocols**: Formal safety rituals for high-stakes actions:
-  - **Dual Confirmation**: Requires explicit re-authorization for recursive or destructive tasks.
-  - **Emergency Freeze**: Instant halt of all autonomous systems via the Reflex Spinal Cord.
-- **Self-Limitation Awareness**: "I'm not entirely certain." The system honestly reports confidence gaps and refuses to guess when stakes are high.
-- **Authority Escalation**: A rigid 6-tier hierarchy ensuring the user always retains ultimate control.
-- **Agent Reputation Ledger**: Accountability tracking including reliability scores and cooldown penalties.
-- **Intent Anticipation Graph**: Beyond simple prediction. The system builds an N-gram graph of your workflows (A -> B -> C) to pre-warm agents and tools before you finish your request.
-- **Execution Micro-Scheduler**: Zero-lag performance via results reuse (caching) and cascading cancellation of dependent tasks on failure.
-- **Context Compression Engine**: Prevents hallucination creep by semantically condensing long-term memory and pruning metadata noise.
-- **Failure Immunization**: The system automatically generates new "Guard Rules" after failures to prevent repeating mistakes.
-- **Local World Model**: Permanent, zero-lag awareness of the project structure, tools, and system organs.
+- **Temporal Pattern Memory (Circadian Rhythm)**: The system learns your daily and weekly patterns. It "knows" what you usually do at 9 AM on Mondays vs 5 PM on Fridays using the `CircadianRhythmTracker`.
+- **Dynamic Agent Profiling**: Every agent runs with an **Agent Scorecard** that tracks real-time reliability, success streaks, and average latency.
+- **Explainability Engine (Black Box)**: Every AI decision is recorded with a full "Trace" to answer *"Why did you do that?"*.
+- **Meta-Observability**: Powered by `DecisionHeatmapGenerator`, visualizing which components (Rules, Priority, Mission) influenced any given action.
+- **Counterfactual Simulation**: Hallucinates 2-3 possible outcomes before high-risk execution to minimize entropy.
+- **Operator Mode**: High-precision mode with zero-autonomy, forcing the system to act purely as an extension of the user.
+- **Intent Anticipation Graph**: Pre-warms tools and agents based on N-gram command sequences.
+- **Execution Micro-Scheduler**: Zero-lag performance via results reuse and cascading cancellations.
+- **Context Compression Engine**: Prevents memory bloat and hallucination creep via semantic condensation.
+- **Failure Immunization**: Automated "Guard Rule" generation after repeatedly failed tasks.
+- **Local World Model**: Hard-coded, zero-lag awareness of the project structure and system hierarchy.
 
-### 12. Motor System & Muscles 🦾
-- **Motor System**: Translates abstract intent into external actions via **Actuators**.
-- **Actuators**:
-  - **Appwrite Actuator**: Cloud muscle for serverless deployment/execution.
-  - **Shell Actuator**: Machinary muscle for local command execution and robotics.
-- **Effector Agent**: A specialized heavy-duty execution agent that controls the muscles.
+### 12. The Experience (Experiential Layer) 🕶️✨
+- **DreamStream Screensaver**: A Matrix-style visual dashboard that activates during Dreaming Mode, showing real-time subconscious simulation logs.
+- **Tone Modulator**: The system adjusts its "voice" dynamically. From `Routine` (Blue) to `Urgent` (Red/🚨) or `Celebratory` (Green/✨) based on mission criticality.
+- **Risk Forecast Widget**: A "Weather Report" for plan execution. "☀️ 98% Success Probability" vs "⛈️ Storm Warning: Unstable Node".
 
-### 13. Biological Dashboard (Visual Consciousness) 👁️
-- **Organ Monitor**: Real-time visualization of metabolic states and organ health.
-- **Volition Stream**: A live feed of the AI's "Stream of Consciousness" and internal drives.
-- **Quarantine Zone**: visual management of agents locked by the Reflex System.
-- **Mission Monitor**: Dedicated UI for tracking active goals, confidence drift, and constraint enforcement.
-- **Trust Center**: One-stop hub for managing Compliance Profiles, Safety Protocols, and Decision Traces.
-- **Decision Trace UI**: Inspect the "Black Box" explainability traces for every system action.
+### 13. Motor System & Muscles 🦾
+- **Effector Agent**: Controls the physical/cloud muscles of the system via **Actuators** (Shell, Appwrite).
+- **Dual Confirmation**: Safety rituals for high-stakes actions requiring explicit human re-authorization.
 
-### 14. Dreaming Mode (Simulation & Optimization) 🌙
-- **Sandboxed Analysis**: Offline, non-executing phase that runs during REM sleep to optimize system parameters without affecting production.
-- **Core Capabilities**:
-  - **Memory Consolidation**: Links cause→effect and organizes the knowledge vault.
-  - **Failure Pattern Analysis**: Replays failures to detect recurring bugs or bottlenecks.
-  - **Planner Simulation**: Dry-runs alternate execution paths to improve future planning efficiency.
-  - **Rule Conflict Detection**: Finds overlapping, dead, or conflicting deterministic rules.
-- **Human-in-the-Loop**: All AI suggestions are presented as **Recommendations** requiring explicit human approval before being applied.
-- **Safety Kill-Switch**: Actuators are hard-locked, and any attempt to modify system state without approval triggers an immediate abort.
+### 14. Biological Monitoring & Trust 👁️
+- **Trust Center**: Manage compliance profiles, safety protocols, and decision traces.
+- **Organ Monitor**: Pulse-check for system metabolism and volition drives.
+- **Mission Monitor**: Real-time tracking of objective progress and risk forecasts.
 
-## 🛠️ Tech Stack & Architecture
+### 15. Dreaming Mode (Multi-Layered Subconscious) 🌙
+- **Layer 1: Tactical Simulation**: Re-runs failed tasks to find better parameters.
+- **Layer 2: Strategic Optimization**: Analyzes frequent workflow patterns for efficiency.
+- **Layer 3: Structural Analysis**: Detects dead rules and conflicting safety constraints.
 
-- **Framework**: Flutter (Dart)
-- **Biological Architecture**:
-  - **Brain (Frontal Lobe)**: `PlannerAgent` (Planning & Routing).
-  - **Memory (Hippocampus)**: `ReliabilityTracker` (Learning from success).
-  - **Autonomic Nervous System**: `AutonomicSystem` (Heartbeat & Health).
-  - **Circadian Rhythms**: `SleepManager` (Resource Optimization).
-  - **Immune System**: `ImmuneSystem` (Active defense & Safe mode).
-  - **Dreaming State**: `DreamingMode` (Simulation & Analysis).
-  - **Spinal Cord (Reflexes)**: `ReflexSystem` (Instant safety).
-  - **Muscles (Motor System)**: `MotorSystem` & `EffectorAgent` (External action).
-  - **Social Integration**: `SocialAgent`, `SpeechOrgan` (Broca's/Wernicke's), & `ExternalInterfaces` (Webhooks, Appwrite).
-  - **Dream Logic**: `DreamReport` & `DreamRecommendation` (Data structures for optimization).
-  - **Limbic System (Emotions)**: `LimbicSystem` (PAD Model - Pleasure, Arousal, Dominance) for emotional context regulating agent responses.
+## 🛠️ Tech Stack: The Intelligence OS Core
+
+- **Orchestration**: `ControllerAgent`, `PlannerAgent`, `TaskQueue`.
+- **Safety**: `RuleEngine`, `ComplianceMode`, `ReflexSystem`.
+- **Learning**: `PredictionEngine`, `CircadianRhythmTracker`, `AgentScorecard`.
+- **Memory**: `Vault`, `ContextCompressionEngine`, `LocalWorldModel`.
+- **Simulation**: `SimulationEngine`, `DreamingMode` (Multi-Layered).
+- **Explainability**: `ExplainabilityEngine`, `DecisionHeatmapGenerator`.
+- **UI/UX**: `AgentDashboard`, `DreamStreamScreen`, `ToneModulator`.
+
+---
+
+## 🚀 Getting Started
+
+1.  **Initialize the Brain**: Register your agents and set compliance to `Personal`.
+2.  **Define a Mission**: Give the system an objective and watch it track progress.
+3.  **Watch it Dream**: Let the system go idle to trigger the **DreamStream** optimization.
+4.  **Audit the Black Box**: Use the **Trust Center** to see *why* the AI made specific decisions.
+
+---
+*Built for the future of agentic coding and autonomous intelligence.*
 
 ## 🔮 Future Roadmap (Evolutionary Path)
 

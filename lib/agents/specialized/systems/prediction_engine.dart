@@ -1,8 +1,12 @@
+import 'circadian_tracker.dart';
+
 /// Prediction Engine (Strategic Anticipation) 🔮
 ///
 /// Tracks user command patterns to preload agents and tools.
 /// Eliminates "loading" perception by being ready before the user asks.
 class PredictionEngine {
+  final CircadianRhythmTracker _temporalTracker = CircadianRhythmTracker();
+
   /// Intent Anticipation Graph (A -> B -> C)
   final Map<String, Map<String, double>> _sequenceGraph = {};
 
@@ -32,7 +36,10 @@ class PredictionEngine {
     _recentCommands.add(cmd);
     if (_recentCommands.length > maxHistory) _recentCommands.removeAt(0);
 
-    // 3. Apply Temporal Decay (Sharpening the focus on recent behavior)
+    // 3. Update Temporal Memory
+    _temporalTracker.recordAction(cmd);
+
+    // 4. Apply Temporal Decay (Sharpening the focus on recent behavior)
     _applyDecay();
   }
 
@@ -71,6 +78,16 @@ class PredictionEngine {
       // Top 3 anticipated next steps
       final agent = _mapCommandToAgent(entry.key);
       if (agent != null) predictions.add(agent);
+    }
+
+    // Boost with Temporal Predictions (4th Dimension)
+    final temporalLikely = _temporalTracker.getLikelyActions();
+    for (final action in temporalLikely) {
+      final agent = _mapCommandToAgent(action);
+      if (agent != null && !predictions.contains(agent)) {
+        // Add temporal prediction if not already present
+        predictions.add(agent);
+      }
     }
 
     return predictions.toList();

@@ -647,10 +647,13 @@ class _ReportItem extends StatelessWidget {
         return const Icon(Icons.memory, color: Color(0xFF9F7AEA), size: 20);
       case DreamCapability.failurePatternAnalysis:
         return const Icon(Icons.bug_report, color: Colors.orange, size: 20);
-      case DreamCapability.plannerSimulation:
-        return const Icon(Icons.route, color: Colors.blue, size: 20);
-      case DreamCapability.ruleConflictDetection:
-        return const Icon(Icons.rule, color: Color(0xFF48BB78), size: 20);
+      case DreamCapability.tacticalSimulation:
+        return const Icon(Icons.build, color: Colors.blueAccent, size: 20);
+      case DreamCapability.strategicOptimization:
+        return const Icon(Icons.timeline, color: Colors.cyan, size: 20);
+      case DreamCapability.structuralAnalysis:
+        return const Icon(Icons.architecture,
+            color: Color(0xFF48BB78), size: 20);
     }
   }
 
@@ -660,10 +663,12 @@ class _ReportItem extends StatelessWidget {
         return 'Memory Consolidation';
       case DreamCapability.failurePatternAnalysis:
         return 'Failure Pattern Analysis';
-      case DreamCapability.plannerSimulation:
-        return 'Planner Simulation';
-      case DreamCapability.ruleConflictDetection:
-        return 'Rule Conflict Detection';
+      case DreamCapability.tacticalSimulation:
+        return 'Tactical Simulation (Layer 1)';
+      case DreamCapability.strategicOptimization:
+        return 'Strategic Optimization (Layer 2)';
+      case DreamCapability.structuralAnalysis:
+        return 'Structural Analysis (Layer 3)';
     }
   }
 }

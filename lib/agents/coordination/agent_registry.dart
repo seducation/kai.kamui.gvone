@@ -1,10 +1,14 @@
 import '../core/agent_base.dart';
+import 'agent_scorecard.dart';
 
 /// Central registry for managing all agents.
 /// Agents must be registered before they can be used by the controller.
 class AgentRegistry {
   /// Map of agent name to agent instance
   final Map<String, AgentBase> _agents = {};
+
+  /// Dynamic Profiling Scorecards
+  final Map<String, AgentScorecard> _scorecards = {};
 
   /// Callbacks for agent lifecycle events
   final List<void Function(AgentBase)> _onRegisterCallbacks = [];
@@ -16,6 +20,7 @@ class AgentRegistry {
       throw StateError('Agent "${agent.name}" is already registered');
     }
     _agents[agent.name] = agent;
+    _scorecards.putIfAbsent(agent.name, () => AgentScorecard(agent.name));
 
     // Notify listeners
     for (final callback in _onRegisterCallbacks) {
@@ -36,6 +41,7 @@ class AgentRegistry {
       throw StateError('Agent "$name" is not registered');
     }
     _agents.remove(name);
+    _scorecards.remove(name);
 
     // Notify listeners
     for (final callback in _onUnregisterCallbacks) {
@@ -88,6 +94,15 @@ class AgentRegistry {
   /// Clear all agents
   void clear() {
     _agents.clear();
+    _scorecards.clear();
+  }
+
+  /// Get scorecard for an agent
+  AgentScorecard? getScorecard(String name) => _scorecards[name];
+
+  /// Get or create scorecard
+  AgentScorecard requireScorecard(String name) {
+    return _scorecards.putIfAbsent(name, () => AgentScorecard(name));
   }
 }
 
