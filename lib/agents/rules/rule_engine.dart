@@ -79,6 +79,9 @@ class RuleEngine {
       case ComplianceProfile.personal:
         // Full access
         return true;
+      case ComplianceProfile.operator:
+        // Operator Mode: Direct autonomy is disabled.
+        return false;
     }
     return true;
   }

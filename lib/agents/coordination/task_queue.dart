@@ -109,6 +109,13 @@ class TaskQueue {
   /// Completed task IDs (for dependency checking)
   final Set<String> _completedTasks = {};
 
+  /// Execution Reuse Cache (agentName+input -> result)
+  final Map<String, dynamic> _resultCache = {};
+
+  /// Cache TTL window (Recent results only)
+  static const Duration _cacheTTL = Duration(minutes: 5);
+  final Map<String, DateTime> _cacheTimestamps = {};
+
   /// Maximum concurrent tasks
   final int maxConcurrent;
 
@@ -143,6 +150,22 @@ class TaskQueue {
   }) {
     final taskId = 'task_${++_taskCounter}';
     final priorityVal = explicitPriority ?? priority.value;
+
+    // 1. Execution Reuse Implementation (Zero-Lag)
+    final cacheKey = '${agent.name}_${input.toString()}';
+    if (_resultCache.containsKey(cacheKey)) {
+      final timestamp = _cacheTimestamps[cacheKey];
+      if (timestamp != null &&
+          DateTime.now().difference(timestamp) < _cacheTTL) {
+        logger.logStep(
+            agentName: 'System',
+            action: StepType.check,
+            target:
+                'Execution Reuse: Returning cached result for ${agent.name}',
+            status: StepStatus.success);
+        return Future.value(_resultCache[cacheKey] as T);
+      }
+    }
 
     final task = QueuedTask(
       id: taskId,
@@ -289,6 +312,12 @@ class TaskQueue {
 
     try {
       final result = await task.agent.run(task.input, token: token);
+
+      // Update Cache on success
+      final cacheKey = '${task.agent.name}_${task.input.toString()}';
+      _resultCache[cacheKey] = result;
+      _cacheTimestamps[cacheKey] = DateTime.now();
+
       task.complete(result);
       _completedTasks.add(taskId);
     } catch (e) {
@@ -297,6 +326,8 @@ class TaskQueue {
         task.fail(e);
       } else {
         task.fail(e);
+        // Cascading Cancellation: Fail any dependent tasks immediately
+        _cancelDownstream(taskId);
       }
     } finally {
       _runningTasks.remove(taskId);
@@ -318,6 +349,17 @@ class TaskQueue {
         if (queue.remove(taskId)) break;
       }
     }
+  }
+
+  void _cancelDownstream(String parentId) {
+    _tasks.forEach((id, task) {
+      if (task.dependsOn.contains(parentId)) {
+        if (task.status == TaskQueueStatus.pending) {
+          task.fail('Dependency $parentId failed (Cascading Cancellation)');
+          _cancelDownstream(id); // Recursive cancellation
+        }
+      }
+    });
   }
 
   QueuedTask? getTask(String taskId) => _tasks[taskId];

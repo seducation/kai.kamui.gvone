@@ -3,53 +3,77 @@
 /// Tracks user command patterns to preload agents and tools.
 /// Eliminates "loading" perception by being ready before the user asks.
 class PredictionEngine {
-  final List<String> _commandHistory = [];
-  final Map<String, int> _patternWeights = {};
+  /// Intent Anticipation Graph (A -> B -> C)
+  final Map<String, Map<String, double>> _sequenceGraph = {};
 
-  /// Minimum occurrences to consider a pattern
-  static const int minPatternThreshold = 3;
+  /// Recent command window for N-gram tracking
+  final List<String> _recentCommands = [];
 
-  /// Record a command and update patterns
+  /// Max history for local context
+  static const int maxHistory = 50;
+
+  /// Record a command and strengthen the anticipation graph
   void recordCommand(String command) {
-    _commandHistory.add(command.toLowerCase());
-    if (_commandHistory.length > 50) _commandHistory.removeAt(0);
+    final cmd = command.toLowerCase();
 
-    _updatePatterns();
-  }
+    // 1. Update Graph (Temporal Strengthening)
+    if (_recentCommands.isNotEmpty) {
+      final last = _recentCommands.last;
+      _strengthenLink(last, cmd);
 
-  void _updatePatterns() {
-    if (_commandHistory.length < 2) return;
-
-    // Simple Bigram pattern: "cmd A" -> "cmd B"
-    final last = _commandHistory[_commandHistory.length - 2];
-    final current = _commandHistory.last;
-    final pattern = '$last -> $current';
-
-    _patternWeights[pattern] = (_patternWeights[pattern] ?? 0) + 1;
-  }
-
-  /// Predict next likely agent based on history
-  List<String> predictNextAgents() {
-    if (_commandHistory.isEmpty) return [];
-
-    final lastCmd = _commandHistory.last;
-    final candidates = <String, int>{};
-
-    _patternWeights.forEach((pattern, weight) {
-      if (pattern.startsWith('$lastCmd -> ')) {
-        final predicted = pattern.split(' -> ').last;
-        candidates[predicted] = weight;
+      // Look back two steps for deeper anticipation (A -> C)
+      if (_recentCommands.length >= 2) {
+        final previous = _recentCommands[_recentCommands.length - 2];
+        _strengthenLink(previous, cmd, weight: 0.5); // Indirect link
       }
-    });
+    }
 
-    final sorted = candidates.entries.toList()
+    // 2. Update Window
+    _recentCommands.add(cmd);
+    if (_recentCommands.length > maxHistory) _recentCommands.removeAt(0);
+
+    // 3. Apply Temporal Decay (Sharpening the focus on recent behavior)
+    _applyDecay();
+  }
+
+  void _strengthenLink(String from, String to, {double weight = 1.0}) {
+    final targets = _sequenceGraph.putIfAbsent(from, () => {});
+    targets[to] = (targets[to] ?? 0.0) + weight;
+  }
+
+  void _applyDecay() {
+    // Every 10 commands, slightly decay old patterns to favor current workflows
+    if (_recentCommands.length % 10 == 0) {
+      for (final targets in _sequenceGraph.values) {
+        targets.updateAll((key, val) => val * 0.95);
+      }
+    }
+  }
+
+  /// Predict next likely agents based on current intent graph
+  List<String> predictNextAgents() {
+    if (_recentCommands.isEmpty) return [];
+
+    final lastCmd = _recentCommands.last;
+    final targets = _sequenceGraph[lastCmd];
+
+    if (targets == null || targets.isEmpty) {
+      // Fallback to keyword matching if no graph data
+      return [_mapCommandToAgent(lastCmd)].whereType<String>().toList();
+    }
+
+    // Sort by graph weight (Probability)
+    final sorted = targets.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    // Map command keywords to agents (Simple map for now)
-    return sorted
-        .map((e) => _mapCommandToAgent(e.key))
-        .whereType<String>()
-        .toList();
+    final predictions = <String>{};
+    for (final entry in sorted.take(3)) {
+      // Top 3 anticipated next steps
+      final agent = _mapCommandToAgent(entry.key);
+      if (agent != null) predictions.add(agent);
+    }
+
+    return predictions.toList();
   }
 
   String? _mapCommandToAgent(String command) {
@@ -61,6 +85,12 @@ class PredictionEngine {
     }
     if (command.contains('test') || command.contains('debug')) {
       return 'CodeDebugger';
+    }
+    if (command.contains('save') || command.contains('store')) {
+      return 'StorageAgent';
+    }
+    if (command.contains('social') || command.contains('post')) {
+      return 'SocialAgent';
     }
     return null;
   }

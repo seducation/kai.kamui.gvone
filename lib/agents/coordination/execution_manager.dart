@@ -3,6 +3,11 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
+import '../rules/rule_engine.dart';
+import '../rules/rule_definitions.dart';
+import '../core/step_logger.dart';
+import '../core/step_types.dart';
+import '../core/step_schema.dart';
 
 /// Execution modes for task running
 enum ExecutionMode {
@@ -184,10 +189,46 @@ class ExecutionManager {
       // Add to failure vault (like git commit for failures)
       _failureVault.add(record);
       await _saveFailureVault();
+
+      // Phase 9: Auto-Immunization
+      await _immunize(record);
     } else if (record.result == ExecutionResult.success) {
       // Auto-cleanup on success
       await _cleanupOnSuccess(record);
     }
+  }
+
+  /// Automatically generate "Guard Rules" after failures (Sharpness Layer)
+  Future<void> _immunize(ExecutionRecord record) async {
+    final ruleEngine = RuleEngine();
+
+    // Heuristic: If we fail at an action, add a "Simulate First" requirement
+    if (record.errorMessage != null) {
+      final suggestion = Rule(
+        id: 'auto_guard_${record.id.substring(0, 8)}',
+        type: RuleType.safety,
+        scope: RuleScope.agent,
+        targetId: record.steps.lastOrNull?.agentName,
+        condition: record.taskName.split(' ').first, // Action keyword
+        action: RuleAction.simulate,
+        explanation:
+            'Auto-generated guard due to previous failure: ${record.errorMessage}',
+        immutable: false,
+      );
+
+      ruleEngine.addRule(suggestion);
+
+      _logStep(
+          'System Immunized: Added safety guard for ${suggestion.condition}');
+    }
+  }
+
+  void _logStep(String msg) {
+    GlobalStepLogger().log(
+        agentName: 'System',
+        action: StepType.check,
+        target: msg,
+        status: StepStatus.success);
   }
 
   /// Prepare for undo by saving current state

@@ -137,6 +137,7 @@ enum ComplianceProfile {
   enterprise, // Strict data boundaries, logging
   education, // Explains everything, safe search
   restricted, // Read-only, minimal actions
+  operator, // High-precision, zero-autonomy (You are the brain)
 }
 
 /// A deterministic rule governing system behavior.
