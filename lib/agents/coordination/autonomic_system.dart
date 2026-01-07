@@ -5,6 +5,7 @@ import 'reliability_tracker.dart';
 import '../storage/taxonomy_registry.dart';
 import 'agent_registry.dart';
 import 'organ_base.dart';
+import 'meta_cognition_system.dart';
 
 /// Autonomic Nervous System - Keeps the system alive and healthy.
 ///
@@ -34,6 +35,10 @@ class AutonomicSystem {
   void start() {
     if (_isActive) return;
     _isActive = true;
+
+    // Wake up the Meta-Cognitive Layer
+    MetaCognitionSystem().start();
+
     _heartbeatTimer = Timer.periodic(_heartbeatInterval, (_) => _pulse());
     _pulse(); // Initial pulse
   }
@@ -43,6 +48,8 @@ class AutonomicSystem {
     _isActive = false;
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
+
+    MetaCognitionSystem().stop();
   }
 
   Future<void> _pulse() async {

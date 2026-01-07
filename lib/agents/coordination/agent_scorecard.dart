@@ -22,10 +22,21 @@ class AgentScorecard {
 
   DateTime? lastActive;
 
+  /// Tool usage statistics (Tool Name -> Count)
+  final Map<String, int> _toolUsage = {};
+
+  /// Error bias tracking (Error Type -> Count)
+  final Map<String, int> _errorBiases = {};
+
   AgentScorecard(this.agentName);
 
   /// Record a task execution result
-  void recordResult({required bool success, Duration? latency}) {
+  void recordResult({
+    required bool success,
+    Duration? latency,
+    String? toolName,
+    String? errorType,
+  }) {
     _totalTasks++;
     lastActive = DateTime.now();
 
@@ -47,6 +58,14 @@ class AgentScorecard {
         _avgLatency =
             Duration(milliseconds: ((oldMs * 0.8) + (newMs * 0.2)).round());
       }
+    }
+
+    if (toolName != null) {
+      _toolUsage[toolName] = (_toolUsage[toolName] ?? 0) + 1;
+    }
+
+    if (errorType != null) {
+      _errorBiases[errorType] = (_errorBiases[errorType] ?? 0) + 1;
     }
   }
 
@@ -72,6 +91,20 @@ class AgentScorecard {
     return '🔴 Sluggish';
   }
 
+  /// Get most used tools
+  List<MapEntry<String, int>> get topTools {
+    final sorted = _toolUsage.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    return sorted.take(5).toList();
+  }
+
+  /// Get problematic error patterns
+  List<MapEntry<String, int>> get commonErrors {
+    final sorted = _errorBiases.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    return sorted.take(5).toList();
+  }
+
   Map<String, dynamic> toJson() => {
         'agent': agentName,
         'success': _successCount,
@@ -79,5 +112,7 @@ class AgentScorecard {
         'streak': _failureStreak,
         'reliability': reliabilityScore,
         'avgLatencyMs': _avgLatency.inMilliseconds,
+        'topTools': topTools.map((e) => '${e.key}:${e.value}').toList(),
+        'commonErrors': commonErrors.map((e) => '${e.key}:${e.value}').toList(),
       };
 }
